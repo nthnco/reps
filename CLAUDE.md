@@ -61,6 +61,7 @@ Wants to read andunderstand the code, not type it all.
    bite later. If the user says "I don't follow this," stop and explain it
    differently before continuing.
 7. Be direct. If the user's idea or code has a real problem, say so.
+8. Commit messages: one-line subject, no body.
 
 ## Product rules
 
