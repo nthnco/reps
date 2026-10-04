@@ -9,3 +9,9 @@ DATABASE_URL = os.environ.get(
 
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(engine)
+
+
+def get_db():
+    """FastAPI dependency: one session per request, always closed afterward."""
+    with SessionLocal() as session:
+        yield session

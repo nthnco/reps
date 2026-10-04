@@ -10,11 +10,13 @@ os.environ["DATABASE_URL"] = os.environ.get(
 import pytest  # noqa: E402
 from alembic import command  # noqa: E402
 from alembic.config import Config  # noqa: E402
+from fastapi.testclient import TestClient  # noqa: E402
 from sqlalchemy import create_engine, text  # noqa: E402
 from sqlalchemy.engine import make_url  # noqa: E402
 from sqlalchemy.orm import Session  # noqa: E402
 
-from app.db import DATABASE_URL, engine  # noqa: E402
+from app.db import DATABASE_URL, engine, get_db  # noqa: E402
+from app.main import app  # noqa: E402
 
 ALEMBIC_INI = Path(__file__).resolve().parent.parent / "alembic.ini"
 
@@ -51,3 +53,11 @@ def db(migrated_db: None):
         yield session
         session.close()
         transaction.rollback()
+
+
+@pytest.fixture
+def client(db: Session):
+    """An API client whose requests use the rolled-back test session."""
+    app.dependency_overrides[get_db] = lambda: db
+    yield TestClient(app)
+    app.dependency_overrides.clear()
