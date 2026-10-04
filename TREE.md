@@ -7,7 +7,7 @@ queue shows what's due
 
 ## MVP leaves
 
-- [ ] **Data model**: `Problem` (number, title, link, pattern, difficulty,
+- [x] **Data model**: `Problem` (number, title, link, pattern, difficulty,
       notes) and `Attempt` (problem, date, solved, duration_seconds,
       confidence 1-5, used_hint)
 - [ ] **Add-problem form** with pattern dropdown (API endpoint + React form)
