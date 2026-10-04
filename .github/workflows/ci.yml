@@ -10,6 +10,20 @@ jobs:
     defaults:
       run:
         working-directory: backend
+    services:
+      db:
+        image: postgres:17
+        env:
+          POSTGRES_USER: reps
+          POSTGRES_PASSWORD: reps
+          POSTGRES_DB: reps_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
     steps:
       - uses: actions/checkout@v5
       - uses: astral-sh/setup-uv@v6
