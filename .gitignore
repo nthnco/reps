@@ -1,0 +1,24 @@
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# Virtual env (uv creates this)
+.venv/
+
+# Frontend (Node)
+node_modules/
+dist/
+
+# Local database files (e.g. SQLite used in tests)
+*.db
+*.sqlite
+*.sqlite3
+
+# Env / secrets (GitHub token later)
+.env
+
+# Editors / OS
+.vscode/
+.idea/
+.DS_Store

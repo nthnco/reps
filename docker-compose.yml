@@ -1,0 +1,15 @@
+# Local development database. Credentials here are for local use only.
+services:
+  db:
+    image: postgres:17
+    environment:
+      POSTGRES_USER: reps
+      POSTGRES_PASSWORD: reps
+      POSTGRES_DB: reps
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+volumes:
+  pgdata:
