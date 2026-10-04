@@ -8,10 +8,11 @@ queue shows what's due
 ## MVP leaves
 
 - [ ] **Data model**: `Problem` (number, title, link, pattern, difficulty,
-      notes) and `Attempt` (problem, date, solved, minutes, confidence 1-5,
-      used_hint)
+      notes) and `Attempt` (problem, date, solved, duration_seconds,
+      confidence 1-5, used_hint)
 - [ ] **Add-problem form** with pattern dropdown (API endpoint + React form)
-- [ ] **Log-attempt form** (API endpoint + React form)
+- [ ] **Log-attempt form** (API endpoint + React form) with a timer that
+      survives a page refresh, plus manual duration entry as a fallback
 - [ ] **Scheduler**: SM-2 style next-review date from result and confidence,
       as a pure function with unit tests
 - [ ] **Today's queue page** (API endpoint + React page)
@@ -29,6 +30,14 @@ queue shows what's due
    questions lean on; only once the data supports it
 6. **Accounts and a shareable demo**
 
+## Decided
+
+- **Dates**: attempts and review due dates are calendar dates, no time of
+  day. "Today" is computed by the backend in one configured timezone,
+  `America/Los_Angeles`, with a midnight rollover.
+- **Duration**: stored as seconds, shown as minutes.
+- **Styling**: Tailwind.
+
 ## Open decisions
 
 - **Single-user vs accounts**: assumed single-user for now (no auth).
@@ -37,6 +46,5 @@ queue shows what's due
 - **Keeping frontend types in sync with the API**: hand-written TypeScript
   types vs generating them from FastAPI's OpenAPI schema. Decide before the
   first form is built.
-- **Styling**:  Tailwind
 - **Frontend data fetching**: plain `fetch` vs TanStack Query (caching,
   loading states). Decide with the first page that reads data.
