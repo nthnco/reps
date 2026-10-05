@@ -6,6 +6,29 @@
   },
   "paths": {
     "/api/problems": {
+      "get": {
+        "tags": [
+          "problems"
+        ],
+        "summary": "List Problems",
+        "operationId": "list_problems_api_problems_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ProblemRead"
+                  },
+                  "type": "array",
+                  "title": "Response List Problems Api Problems Get"
+                }
+              }
+            }
+          }
+        }
+      },
       "post": {
         "tags": [
           "problems"
@@ -46,6 +69,58 @@
         }
       }
     },
+    "/api/problems/{problem_id}/attempts": {
+      "post": {
+        "tags": [
+          "problems"
+        ],
+        "summary": "Create Attempt",
+        "operationId": "create_attempt_api_problems__problem_id__attempts_post",
+        "parameters": [
+          {
+            "name": "problem_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Problem Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AttemptCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttemptRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/health": {
       "get": {
         "summary": "Health",
@@ -65,6 +140,87 @@
   },
   "components": {
     "schemas": {
+      "AttemptCreate": {
+        "properties": {
+          "attempted_on": {
+            "type": "string",
+            "format": "date",
+            "title": "Attempted On"
+          },
+          "solved": {
+            "type": "boolean",
+            "title": "Solved"
+          },
+          "duration_seconds": {
+            "type": "integer",
+            "maximum": 86400.0,
+            "minimum": 0.0,
+            "title": "Duration Seconds"
+          },
+          "confidence": {
+            "type": "integer",
+            "maximum": 5.0,
+            "minimum": 1.0,
+            "title": "Confidence"
+          },
+          "used_hint": {
+            "type": "boolean",
+            "title": "Used Hint",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "solved",
+          "duration_seconds",
+          "confidence"
+        ],
+        "title": "AttemptCreate"
+      },
+      "AttemptRead": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "problem_id": {
+            "type": "integer",
+            "title": "Problem Id"
+          },
+          "attempted_on": {
+            "type": "string",
+            "format": "date",
+            "title": "Attempted On"
+          },
+          "solved": {
+            "type": "boolean",
+            "title": "Solved"
+          },
+          "duration_seconds": {
+            "type": "integer",
+            "title": "Duration Seconds"
+          },
+          "confidence": {
+            "type": "integer",
+            "title": "Confidence"
+          },
+          "used_hint": {
+            "type": "boolean",
+            "title": "Used Hint"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "problem_id",
+          "attempted_on",
+          "solved",
+          "duration_seconds",
+          "confidence",
+          "used_hint"
+        ],
+        "title": "AttemptRead"
+      },
       "Difficulty": {
         "type": "string",
         "enum": [
