@@ -1,10 +1,6 @@
-:root {
-  font-family: system-ui, sans-serif;
-  color-scheme: light dark;
-}
+@import "tailwindcss";
 
-body {
-  margin: 0 auto;
-  max-width: 48rem;
-  padding: 1rem;
+:root {
+  /* Native form controls and scrollbars follow the OS light/dark setting. */
+  color-scheme: light dark;
 }
