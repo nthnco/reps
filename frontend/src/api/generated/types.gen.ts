@@ -137,6 +137,17 @@ export type ProblemRead = {
 };
 
 /**
+ * QueueItem
+ */
+export type QueueItem = {
+    problem: ProblemRead;
+    /**
+     * Due On
+     */
+    due_on: string | null;
+};
+
+/**
  * ValidationError
  */
 export type ValidationError = {
@@ -236,6 +247,24 @@ export type CreateAttemptApiProblemsProblemIdAttemptsPostResponses = {
 };
 
 export type CreateAttemptApiProblemsProblemIdAttemptsPostResponse = CreateAttemptApiProblemsProblemIdAttemptsPostResponses[keyof CreateAttemptApiProblemsProblemIdAttemptsPostResponses];
+
+export type TodaysQueueApiQueueGetData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/queue';
+};
+
+export type TodaysQueueApiQueueGetResponses = {
+    /**
+     * Response Todays Queue Api Queue Get
+     *
+     * Successful Response
+     */
+    200: Array<QueueItem>;
+};
+
+export type TodaysQueueApiQueueGetResponse = TodaysQueueApiQueueGetResponses[keyof TodaysQueueApiQueueGetResponses];
 
 export type HealthApiHealthGetData = {
     body?: never;
