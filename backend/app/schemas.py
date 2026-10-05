@@ -4,11 +4,13 @@ These check one request in isolation. Rules that need the database (like
 duplicate problem numbers) are enforced in the routes.
 """
 
+from datetime import date
 from typing import Annotated
 from urllib.parse import urlsplit
 
 from pydantic import AfterValidator, BaseModel, ConfigDict, Field, StringConstraints
 
+from app.clock import local_today
 from app.models import Difficulty, Pattern
 
 
@@ -51,3 +53,31 @@ class ProblemRead(BaseModel):
     pattern: Pattern
     difficulty: Difficulty
     notes: str
+
+
+def _not_in_future(day: date) -> date:
+    if day > local_today():
+        raise ValueError("can't be in the future")
+    return day
+
+
+class AttemptCreate(BaseModel):
+    attempted_on: Annotated[date, AfterValidator(_not_in_future)] = Field(
+        default_factory=local_today
+    )
+    solved: bool
+    duration_seconds: int = Field(ge=0, le=24 * 60 * 60)
+    confidence: int = Field(ge=1, le=5)
+    used_hint: bool = False
+
+
+class AttemptRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    problem_id: int
+    attempted_on: date
+    solved: bool
+    duration_seconds: int
+    confidence: int
+    used_hint: bool

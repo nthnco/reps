@@ -1,6 +1,6 @@
 import { afterEach, expect, test, vi } from 'vitest'
 import type { ProblemCreate } from './generated'
-import { createProblem } from './problems'
+import { createProblem, listProblems } from './problems'
 
 const BODY: ProblemCreate = {
   number: 1,
@@ -99,4 +99,17 @@ test('reports when the server is unreachable', async () => {
 
   expect(result.ok).toBe(false)
   expect(result).toMatchObject({ message: expect.stringContaining("Couldn't reach the server") })
+})
+
+test('listProblems returns the problems', async () => {
+  const problems = [{ ...BODY, id: 7, notes: '' }]
+  mockFetch(200, problems)
+
+  expect(await listProblems()).toEqual(problems)
+})
+
+test('listProblems throws on an HTTP error', async () => {
+  mockFetch(500, { detail: 'Internal Server Error' })
+
+  await expect(listProblems()).rejects.toThrow("Couldn't load problems (HTTP 500).")
 })

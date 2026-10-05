@@ -1,16 +1,17 @@
-import { useState, type ChangeEvent, type ReactNode, type SubmitEvent } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
+import { useState, type ChangeEvent, type SubmitEvent } from 'react'
 import type { Difficulty, Pattern, ProblemCreate, ProblemRead } from '../api/generated'
 import { DIFFICULTY_LABELS, PATTERN_LABELS } from '../api/labels'
 import { createProblem, type FieldErrors } from '../api/problems'
+import { queryKeys } from '../api/queries'
+import { errorProps, Field, inputClass, submitClass } from './fields'
 
 // Everything is a string while editing; converted to ProblemCreate on submit.
 const EMPTY = { number: '', title: '', link: '', pattern: '', difficulty: '', notes: '' }
 type FormValues = typeof EMPTY
 
-const inputClass =
-  'w-full rounded border border-gray-300 px-2 py-1 dark:border-gray-600 dark:bg-gray-900'
-
 export function AddProblemForm() {
+  const queryClient = useQueryClient()
   const [values, setValues] = useState<FormValues>(EMPTY)
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({})
   const [message, setMessage] = useState<string | null>(null)
@@ -44,6 +45,8 @@ export function AddProblemForm() {
       setSaved(result.problem)
       setValues(EMPTY)
       setFieldErrors({})
+      // Anything showing the problem list (e.g. the log-attempt dropdown) refetches.
+      void queryClient.invalidateQueries({ queryKey: queryKeys.problems })
     } else {
       setMessage(result.message)
       setFieldErrors(result.fieldErrors)
@@ -151,33 +154,9 @@ export function AddProblemForm() {
         </p>
       )}
 
-      <button
-        type="submit"
-        disabled={submitting}
-        className="rounded bg-blue-600 px-4 py-2 font-medium text-white hover:bg-blue-700 disabled:opacity-50"
-      >
+      <button type="submit" disabled={submitting} className={submitClass}>
         {submitting ? 'Saving…' : 'Add problem'}
       </button>
     </form>
-  )
-}
-
-function errorProps(id: string, error: string | undefined) {
-  return error ? { 'aria-invalid': true, 'aria-describedby': `${id}-error` } : {}
-}
-
-function Field(props: { id: string; label: string; error?: string; children: ReactNode }) {
-  return (
-    <div className="space-y-1">
-      <label htmlFor={props.id} className="block font-medium">
-        {props.label}
-      </label>
-      {props.children}
-      {props.error && (
-        <p id={`${props.id}-error`} className="text-sm text-red-600 dark:text-red-400">
-          {props.error}
-        </p>
-      )}
-    </div>
   )
 }

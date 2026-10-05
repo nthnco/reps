@@ -5,6 +5,66 @@ export type ClientOptions = {
 };
 
 /**
+ * AttemptCreate
+ */
+export type AttemptCreate = {
+    /**
+     * Attempted On
+     */
+    attempted_on?: string;
+    /**
+     * Solved
+     */
+    solved: boolean;
+    /**
+     * Duration Seconds
+     */
+    duration_seconds: number;
+    /**
+     * Confidence
+     */
+    confidence: number;
+    /**
+     * Used Hint
+     */
+    used_hint?: boolean;
+};
+
+/**
+ * AttemptRead
+ */
+export type AttemptRead = {
+    /**
+     * Id
+     */
+    id: number;
+    /**
+     * Problem Id
+     */
+    problem_id: number;
+    /**
+     * Attempted On
+     */
+    attempted_on: string;
+    /**
+     * Solved
+     */
+    solved: boolean;
+    /**
+     * Duration Seconds
+     */
+    duration_seconds: number;
+    /**
+     * Confidence
+     */
+    confidence: number;
+    /**
+     * Used Hint
+     */
+    used_hint: boolean;
+};
+
+/**
  * Difficulty
  */
 export type Difficulty = 'easy' | 'medium' | 'hard';
@@ -104,6 +164,24 @@ export type ValidationError = {
     };
 };
 
+export type ListProblemsApiProblemsGetData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/problems';
+};
+
+export type ListProblemsApiProblemsGetResponses = {
+    /**
+     * Response List Problems Api Problems Get
+     *
+     * Successful Response
+     */
+    200: Array<ProblemRead>;
+};
+
+export type ListProblemsApiProblemsGetResponse = ListProblemsApiProblemsGetResponses[keyof ListProblemsApiProblemsGetResponses];
+
 export type CreateProblemApiProblemsPostData = {
     body: ProblemCreate;
     path?: never;
@@ -128,6 +206,36 @@ export type CreateProblemApiProblemsPostResponses = {
 };
 
 export type CreateProblemApiProblemsPostResponse = CreateProblemApiProblemsPostResponses[keyof CreateProblemApiProblemsPostResponses];
+
+export type CreateAttemptApiProblemsProblemIdAttemptsPostData = {
+    body: AttemptCreate;
+    path: {
+        /**
+         * Problem Id
+         */
+        problem_id: number;
+    };
+    query?: never;
+    url: '/api/problems/{problem_id}/attempts';
+};
+
+export type CreateAttemptApiProblemsProblemIdAttemptsPostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type CreateAttemptApiProblemsProblemIdAttemptsPostError = CreateAttemptApiProblemsProblemIdAttemptsPostErrors[keyof CreateAttemptApiProblemsProblemIdAttemptsPostErrors];
+
+export type CreateAttemptApiProblemsProblemIdAttemptsPostResponses = {
+    /**
+     * Successful Response
+     */
+    201: AttemptRead;
+};
+
+export type CreateAttemptApiProblemsProblemIdAttemptsPostResponse = CreateAttemptApiProblemsProblemIdAttemptsPostResponses[keyof CreateAttemptApiProblemsProblemIdAttemptsPostResponses];
 
 export type HealthApiHealthGetData = {
     body?: never;
