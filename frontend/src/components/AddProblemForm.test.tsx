@@ -1,8 +1,9 @@
-import { render, screen, within } from '@testing-library/react'
+import { screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, expect, test, vi } from 'vitest'
 import { PATTERN_LABELS } from '../api/labels'
 import { createProblem } from '../api/problems'
+import { renderWithQueryClient } from '../test/render'
 import { AddProblemForm } from './AddProblemForm'
 
 // The API helper has its own tests; here we only check the form's behaviour.
@@ -23,7 +24,7 @@ async function fillValidForm(user: ReturnType<typeof userEvent.setup>) {
 }
 
 test('the pattern dropdown offers every pattern', () => {
-  render(<AddProblemForm />)
+  renderWithQueryClient(<AddProblemForm />)
 
   const options = within(screen.getByLabelText('Pattern')).getAllByRole('option')
   // +1 for the "Choose a pattern…" placeholder.
@@ -44,7 +45,8 @@ test('submits the problem, shows success, and clears the form', async () => {
       notes: '',
     },
   })
-  render(<AddProblemForm />)
+  const { queryClient } = renderWithQueryClient(<AddProblemForm />)
+  const invalidate = vi.spyOn(queryClient, 'invalidateQueries')
 
   await fillValidForm(user)
   await user.click(screen.getByRole('button', { name: 'Add problem' }))
@@ -59,6 +61,7 @@ test('submits the problem, shows success, and clears the form', async () => {
   })
   expect(await screen.findByRole('status')).toHaveTextContent('Saved #1 Two Sum.')
   expect(screen.getByLabelText('Title')).toHaveValue('')
+  expect(invalidate).toHaveBeenCalledWith({ queryKey: ['problems'] })
 })
 
 test('shows the error message and marks the failing field', async () => {
@@ -68,7 +71,7 @@ test('shows the error message and marks the failing field', async () => {
     message: 'Problem #1 is already in your list.',
     fieldErrors: { number: 'Problem #1 is already in your list.' },
   })
-  render(<AddProblemForm />)
+  renderWithQueryClient(<AddProblemForm />)
 
   await fillValidForm(user)
   await user.click(screen.getByRole('button', { name: 'Add problem' }))
@@ -83,7 +86,7 @@ test('shows the error message and marks the failing field', async () => {
 
 test('does not submit when required fields are empty', async () => {
   const user = userEvent.setup()
-  render(<AddProblemForm />)
+  renderWithQueryClient(<AddProblemForm />)
 
   await user.click(screen.getByRole('button', { name: 'Add problem' }))
 
