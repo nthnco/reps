@@ -28,7 +28,7 @@ export async function createProblem(body: ProblemCreate): Promise<CreateProblemR
 
   if (response.status === 409) {
     const { detail } = (await response.json()) as { detail: string }
-    return { ok: false, message: detail, fieldErrors: { number: detail } }
+    return { ok: false, message: detail, fieldErrors: { link: detail } }
   }
 
   if (response.status === 422) {

@@ -34,6 +34,6 @@ def todays_queue(db: Annotated[Session, Depends(get_db)]) -> list[QueueItem]:
         elif state.due_on <= today:
             due.append(item)
 
-    due.sort(key=lambda item: (item.due_on, item.problem.number))
-    new.sort(key=lambda item: item.problem.number)
+    due.sort(key=lambda item: (item.due_on, item.problem.title))
+    new.sort(key=lambda item: item.problem.title)
     return due + new

@@ -89,10 +89,6 @@ export type Pattern = 'arrays_hashing' | 'two_pointers' | 'sliding_window' | 'st
  */
 export type ProblemCreate = {
     /**
-     * Number
-     */
-    number: number;
-    /**
      * Title
      */
     title: string;
@@ -116,10 +112,6 @@ export type ProblemRead = {
      * Id
      */
     id: number;
-    /**
-     * Number
-     */
-    number: number;
     /**
      * Title
      */

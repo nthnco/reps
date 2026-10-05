@@ -295,11 +295,6 @@
       },
       "ProblemCreate": {
         "properties": {
-          "number": {
-            "type": "integer",
-            "exclusiveMinimum": 0.0,
-            "title": "Number"
-          },
           "title": {
             "type": "string",
             "maxLength": 200,
@@ -325,7 +320,6 @@
         },
         "type": "object",
         "required": [
-          "number",
           "title",
           "link",
           "pattern",
@@ -338,10 +332,6 @@
           "id": {
             "type": "integer",
             "title": "Id"
-          },
-          "number": {
-            "type": "integer",
-            "title": "Number"
           },
           "title": {
             "type": "string",
@@ -365,7 +355,6 @@
         "type": "object",
         "required": [
           "id",
-          "number",
           "title",
           "link",
           "pattern",
