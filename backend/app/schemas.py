@@ -81,3 +81,9 @@ class AttemptRead(BaseModel):
     duration_seconds: int
     confidence: int
     used_hint: bool
+
+
+class QueueItem(BaseModel):
+    problem: ProblemRead
+    due_on: date | None  # None: never attempted
+

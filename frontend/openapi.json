@@ -121,6 +121,32 @@
         }
       }
     },
+    "/api/queue": {
+      "get": {
+        "tags": [
+          "queue"
+        ],
+        "summary": "Todays Queue",
+        "description": "Problems due today or earlier, most overdue first, then never-attempted ones.",
+        "operationId": "todays_queue_api_queue_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/QueueItem"
+                  },
+                  "type": "array",
+                  "title": "Response Todays Queue Api Queue Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/health": {
       "get": {
         "summary": "Health",
@@ -347,6 +373,31 @@
           "notes"
         ],
         "title": "ProblemRead"
+      },
+      "QueueItem": {
+        "properties": {
+          "problem": {
+            "$ref": "#/components/schemas/ProblemRead"
+          },
+          "due_on": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Due On"
+          }
+        },
+        "type": "object",
+        "required": [
+          "problem",
+          "due_on"
+        ],
+        "title": "QueueItem"
       },
       "ValidationError": {
         "properties": {
