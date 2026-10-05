@@ -1,0 +1,183 @@
+import { useState, type ChangeEvent, type ReactNode, type SubmitEvent } from 'react'
+import type { Difficulty, Pattern, ProblemCreate, ProblemRead } from '../api/generated'
+import { DIFFICULTY_LABELS, PATTERN_LABELS } from '../api/labels'
+import { createProblem, type FieldErrors } from '../api/problems'
+
+// Everything is a string while editing; converted to ProblemCreate on submit.
+const EMPTY = { number: '', title: '', link: '', pattern: '', difficulty: '', notes: '' }
+type FormValues = typeof EMPTY
+
+const inputClass =
+  'w-full rounded border border-gray-300 px-2 py-1 dark:border-gray-600 dark:bg-gray-900'
+
+export function AddProblemForm() {
+  const [values, setValues] = useState<FormValues>(EMPTY)
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({})
+  const [message, setMessage] = useState<string | null>(null)
+  const [saved, setSaved] = useState<ProblemRead | null>(null)
+  const [submitting, setSubmitting] = useState(false)
+
+  function update(field: keyof FormValues) {
+    return (event: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) =>
+      setValues((current) => ({ ...current, [field]: event.target.value }))
+  }
+
+  async function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
+    event.preventDefault()
+    setSubmitting(true)
+    setMessage(null)
+    setSaved(null)
+
+    const body: ProblemCreate = {
+      number: Number(values.number),
+      title: values.title,
+      link: values.link,
+      // The selects are `required`, so the browser won't submit an empty choice.
+      pattern: values.pattern as Pattern,
+      difficulty: values.difficulty as Difficulty,
+      notes: values.notes,
+    }
+    const result = await createProblem(body)
+    setSubmitting(false)
+
+    if (result.ok) {
+      setSaved(result.problem)
+      setValues(EMPTY)
+      setFieldErrors({})
+    } else {
+      setMessage(result.message)
+      setFieldErrors(result.fieldErrors)
+    }
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <h2 className="text-xl font-semibold">Add a problem</h2>
+
+      <Field id="number" label="Problem number" error={fieldErrors.number}>
+        <input
+          id="number"
+          type="number"
+          min={1}
+          required
+          value={values.number}
+          onChange={update('number')}
+          className={inputClass}
+          {...errorProps('number', fieldErrors.number)}
+        />
+      </Field>
+
+      <Field id="title" label="Title" error={fieldErrors.title}>
+        <input
+          id="title"
+          required
+          maxLength={200}
+          value={values.title}
+          onChange={update('title')}
+          className={inputClass}
+          {...errorProps('title', fieldErrors.title)}
+        />
+      </Field>
+
+      <Field id="link" label="LeetCode link" error={fieldErrors.link}>
+        <input
+          id="link"
+          type="url"
+          required
+          maxLength={500}
+          placeholder="https://leetcode.com/problems/two-sum/"
+          value={values.link}
+          onChange={update('link')}
+          className={inputClass}
+          {...errorProps('link', fieldErrors.link)}
+        />
+      </Field>
+
+      <Field id="pattern" label="Pattern" error={fieldErrors.pattern}>
+        <select
+          id="pattern"
+          required
+          value={values.pattern}
+          onChange={update('pattern')}
+          className={inputClass}
+          {...errorProps('pattern', fieldErrors.pattern)}
+        >
+          <option value="">Choose a pattern…</option>
+          {Object.entries(PATTERN_LABELS).map(([value, label]) => (
+            <option key={value} value={value}>
+              {label}
+            </option>
+          ))}
+        </select>
+      </Field>
+
+      <Field id="difficulty" label="Difficulty" error={fieldErrors.difficulty}>
+        <select
+          id="difficulty"
+          required
+          value={values.difficulty}
+          onChange={update('difficulty')}
+          className={inputClass}
+          {...errorProps('difficulty', fieldErrors.difficulty)}
+        >
+          <option value="">Choose a difficulty…</option>
+          {Object.entries(DIFFICULTY_LABELS).map(([value, label]) => (
+            <option key={value} value={value}>
+              {label}
+            </option>
+          ))}
+        </select>
+      </Field>
+
+      <Field id="notes" label="Notes (optional)" error={fieldErrors.notes}>
+        <textarea
+          id="notes"
+          rows={3}
+          value={values.notes}
+          onChange={update('notes')}
+          className={inputClass}
+          {...errorProps('notes', fieldErrors.notes)}
+        />
+      </Field>
+
+      {message && (
+        <p role="alert" className="text-red-600 dark:text-red-400">
+          {message}
+        </p>
+      )}
+      {saved && (
+        <p role="status" className="text-green-700 dark:text-green-400">
+          Saved #{saved.number} {saved.title}.
+        </p>
+      )}
+
+      <button
+        type="submit"
+        disabled={submitting}
+        className="rounded bg-blue-600 px-4 py-2 font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+      >
+        {submitting ? 'Saving…' : 'Add problem'}
+      </button>
+    </form>
+  )
+}
+
+function errorProps(id: string, error: string | undefined) {
+  return error ? { 'aria-invalid': true, 'aria-describedby': `${id}-error` } : {}
+}
+
+function Field(props: { id: string; label: string; error?: string; children: ReactNode }) {
+  return (
+    <div className="space-y-1">
+      <label htmlFor={props.id} className="block font-medium">
+        {props.label}
+      </label>
+      {props.children}
+      {props.error && (
+        <p id={`${props.id}-error`} className="text-sm text-red-600 dark:text-red-400">
+          {props.error}
+        </p>
+      )}
+    </div>
+  )
+}
