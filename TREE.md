@@ -37,14 +37,14 @@ queue shows what's due
   `America/Los_Angeles`, with a midnight rollover.
 - **Duration**: stored as seconds, shown as minutes.
 - **Styling**: Tailwind.
+- **Frontend API types**: generated from FastAPI's OpenAPI schema with
+  `@hey-api/openapi-ts` (types only), via `npm run gen:api`. Chosen over
+  `openapi-typescript`, which doesn't support TypeScript 6.
 
 ## Open decisions
 
 - **Single-user vs accounts**: assumed single-user for now (no auth).
 - **Hosting**: undecided. Local-only for the MVP. Needs managed Postgres
   wherever it lands.
-- **Keeping frontend types in sync with the API**: hand-written TypeScript
-  types vs generating them from FastAPI's OpenAPI schema. Decide before the
-  first form is built.
 - **Frontend data fetching**: plain `fetch` vs TanStack Query (caching,
   loading states). Decide with the first page that reads data.
