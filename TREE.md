@@ -8,10 +8,10 @@ queue shows what's due
 ## MVP leaves
 
 - [x] **Data model**: `Problem` (number, title, link, pattern, difficulty,
-      notes) and `Attempt` (problem, date, solved, duration_seconds,
+      notes) and `Attempt` (problem, attempted_on, solved, duration_seconds,
       confidence 1-5, used_hint)
 - [x] **Add-problem form** with pattern dropdown (API endpoint + React form)
-- [ ] **Log-attempt form** (API endpoint + React form) with a timer that
+- [x] **Log-attempt form** (API endpoint + React form) with a timer that
       survives a page refresh, plus manual duration entry as a fallback
 - [ ] **Scheduler**: SM-2 style next-review date from result and confidence,
       as a pure function with unit tests
@@ -40,11 +40,32 @@ queue shows what's due
 - **Frontend API types**: generated from FastAPI's OpenAPI schema with
   `@hey-api/openapi-ts` (types only), via `npm run gen:api`. Chosen over
   `openapi-typescript`, which doesn't support TypeScript 6.
+- **Frontend data fetching**: TanStack Query. Cache keys live in
+  `src/api/queries.ts`.
+- **Workflow**: one branch per leaf with a PR to `main`. The user merges it by
+  hand after CI passes; nothing merges automatically.
 
 ## Open decisions
 
 - **Single-user vs accounts**: assumed single-user for now (no auth).
 - **Hosting**: undecided. Local-only for the MVP. Needs managed Postgres
   wherever it lands.
-- **Frontend data fetching**: plain `fetch` vs TanStack Query (caching,
-  loading states). Decide with the first page that reads data.
+
+## Notes and follow-ups
+
+- **Adding a pattern** takes three steps: a hand-written Alembic migration
+  (autogenerate doesn't see changes to the `ck_problems_pattern` CHECK),
+  `npm run gen:api`, and a label in `frontend/src/api/labels.ts` (the build
+  fails until it's there).
+- **Long durations**: the API accepts up to 24h. Only the log-attempt form asks
+  before submitting a timer over 3h; lower the API cap if other sources
+  (e.g. GitHub linking) start logging attempts.
+- **Network drop after a save**: the forms say "Couldn't reach the server"
+  even if the save went through. Retrying an add-problem gets a clear 409;
+  retrying a log-attempt would create a duplicate attempt.
+- **`npm audit`**: 4 high-severity `js-yaml` warnings come from the dev-only
+  `@hey-api/openapi-ts` (CPU slowdown on crafted YAML; we only feed it our own
+  schema). Recheck after its next release; don't `npm audit fix --force`.
+- **CI**: `astral-sh/setup-uv@v6` warns that Node 20 is deprecated; bump to a
+  newer major when one exists. `ubuntu-latest` moves to Ubuntu 26 from
+  2026-10-19.
