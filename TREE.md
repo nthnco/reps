@@ -13,7 +13,7 @@ queue shows what's due
 - [x] **Add-problem form** with pattern dropdown (API endpoint + React form)
 - [x] **Log-attempt form** (API endpoint + React form) with a timer that
       survives a page refresh, plus manual duration entry as a fallback
-- [ ] **Scheduler**: SM-2 style next-review date from result and confidence,
+- [x] **Scheduler**: SM-2 style next-review date from result and confidence,
       as a pure function with unit tests
 - [ ] **Today's queue page** (API endpoint + React page)
 - [ ] **Tests** for the scheduler, the main API routes, and the key React
