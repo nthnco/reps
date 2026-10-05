@@ -16,6 +16,8 @@ const EMPTY = {
 }
 type FormValues = typeof EMPTY
 
+const LONG_TIMER_SECONDS = 3 * 60 * 60
+
 const buttonClass =
   'rounded border border-gray-300 px-3 py-1 hover:bg-gray-100 disabled:opacity-50 dark:border-gray-600 dark:hover:bg-gray-800'
 
@@ -47,6 +49,17 @@ export function LogAttemptForm() {
         : Math.floor(timer.elapsedMs / 1000)
     if (values.minutes === '' && durationSeconds === 0) {
       setFieldErrors({ duration_seconds: 'Start the timer or enter minutes.' })
+      return
+    }
+    // A timer left running (e.g. overnight) would otherwise be logged silently.
+    if (
+      values.minutes === '' &&
+      durationSeconds > LONG_TIMER_SECONDS &&
+      !window.confirm(
+        `The timer says ${formatDuration(timer.elapsedMs)}. Log it anyway?\n\n` +
+          'Cancel to go back and type the minutes instead.',
+      )
+    ) {
       return
     }
 

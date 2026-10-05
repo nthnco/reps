@@ -112,6 +112,39 @@ test('asks for a duration when the timer is at zero and minutes are blank', asyn
   )
 })
 
+test.each([
+  [true, 1],
+  [false, 0],
+])('a long timer asks first (confirm=%s -> %i submits)', async (answer, submits) => {
+  const elevenHours = 11 * 60 * 60 * 1000
+  localStorage.setItem(STORAGE_KEY, JSON.stringify({ bankedMs: elevenHours, runningSince: null }))
+  const confirm = vi.spyOn(window, 'confirm').mockReturnValue(answer)
+  const user = userEvent.setup()
+  renderWithQueryClient(<LogAttemptForm />)
+
+  await fillRequired(user)
+  await user.click(screen.getByRole('button', { name: 'Log attempt' }))
+
+  expect(confirm).toHaveBeenCalledWith(expect.stringContaining('11:00:00'))
+  expect(createAttemptMock).toHaveBeenCalledTimes(submits)
+  confirm.mockRestore()
+})
+
+test('typed minutes skip the long-timer question', async () => {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify({ bankedMs: 11 * 3_600_000, runningSince: null }))
+  const confirm = vi.spyOn(window, 'confirm')
+  const user = userEvent.setup()
+  renderWithQueryClient(<LogAttemptForm />)
+
+  await fillRequired(user)
+  await user.type(screen.getByLabelText(/enter minutes/), '20')
+  await user.click(screen.getByRole('button', { name: 'Log attempt' }))
+
+  expect(confirm).not.toHaveBeenCalled()
+  expect(createAttemptMock).toHaveBeenCalledWith(7, expect.objectContaining({ duration_seconds: 1200 }))
+  confirm.mockRestore()
+})
+
 test('timer buttons do not submit the form', async () => {
   const user = userEvent.setup()
   renderWithQueryClient(<LogAttemptForm />)
