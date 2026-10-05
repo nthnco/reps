@@ -10,7 +10,7 @@ queue shows what's due
 - [x] **Data model**: `Problem` (number, title, link, pattern, difficulty,
       notes) and `Attempt` (problem, date, solved, duration_seconds,
       confidence 1-5, used_hint)
-- [ ] **Add-problem form** with pattern dropdown (API endpoint + React form)
+- [x] **Add-problem form** with pattern dropdown (API endpoint + React form)
 - [ ] **Log-attempt form** (API endpoint + React form) with a timer that
       survives a page refresh, plus manual duration entry as a fallback
 - [ ] **Scheduler**: SM-2 style next-review date from result and confidence,
