@@ -1,7 +1,8 @@
+import { useQueryClient } from '@tanstack/react-query'
 import { useState, type ChangeEvent, type SubmitEvent } from 'react'
 import { createAttempt, type AttemptFieldErrors } from '../api/attempts'
 import type { AttemptCreate, ProblemRead } from '../api/generated'
-import { useProblems } from '../api/queries'
+import { queryKeys, useProblems } from '../api/queries'
 import { formatDuration } from '../timer/timer'
 import { useTimer } from '../timer/useTimer'
 import { errorProps, Field, FieldError, inputClass, submitClass } from './fields'
@@ -22,6 +23,7 @@ const buttonClass =
   'rounded border border-gray-300 px-3 py-1 hover:bg-gray-100 disabled:opacity-50 dark:border-gray-600 dark:hover:bg-gray-800'
 
 export function LogAttemptForm() {
+  const queryClient = useQueryClient()
   const problems = useProblems()
   const timer = useTimer()
   const [values, setValues] = useState<FormValues>(EMPTY)
@@ -80,6 +82,8 @@ export function LogAttemptForm() {
       setValues(EMPTY)
       setFieldErrors({})
       timer.reset()
+      // The attempt moves this problem's next review date.
+      void queryClient.invalidateQueries({ queryKey: queryKeys.queue })
     } else {
       setMessage(result.message)
       setFieldErrors(result.fieldErrors)
