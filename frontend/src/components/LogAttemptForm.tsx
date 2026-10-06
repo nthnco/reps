@@ -1,8 +1,9 @@
 import { useQueryClient } from '@tanstack/react-query'
 import { useState, type ChangeEvent, type SubmitEvent } from 'react'
+import { Link } from 'react-router'
 import { createAttempt, type AttemptFieldErrors } from '../api/attempts'
 import type { AttemptCreate, ProblemRead } from '../api/generated'
-import { queryKeys } from '../api/queries'
+import { queryKeys, useProblems } from '../api/queries'
 import { formatDuration } from '../timer/timer'
 import { useTimer } from '../timer/useTimer'
 import { errorProps, Field, FieldError, inputClass, submitClass } from './fields'
@@ -24,6 +25,12 @@ const buttonClass =
 export function LogAttemptForm({ problem }: { problem: ProblemRead }) {
   const queryClient = useQueryClient()
   const timer = useTimer()
+  // Only one problem is timed at a time (even while paused), so this form
+  // ignores a timer that belongs to another problem.
+  const ownsTimer = timer.problemId === problem.id
+  const elapsedMs = ownsTimer ? timer.elapsedMs : 0
+  const otherProblemId = timer.problemId !== null && !ownsTimer ? timer.problemId : null
+  const otherProblem = useProblems().data?.find((p) => p.id === otherProblemId)
   const [values, setValues] = useState<FormValues>(EMPTY)
   const [fieldErrors, setFieldErrors] = useState<AttemptFieldErrors>({})
   const [message, setMessage] = useState<string | null>(null)
@@ -44,7 +51,7 @@ export function LogAttemptForm({ problem }: { problem: ProblemRead }) {
     const durationSeconds =
       values.minutes !== ''
         ? Math.round(Number(values.minutes) * 60)
-        : Math.floor(timer.elapsedMs / 1000)
+        : Math.floor(elapsedMs / 1000)
     if (values.minutes === '' && durationSeconds === 0) {
       setFieldErrors({ duration_seconds: 'Start the timer or enter minutes.' })
       return
@@ -54,7 +61,7 @@ export function LogAttemptForm({ problem }: { problem: ProblemRead }) {
       values.minutes === '' &&
       durationSeconds > LONG_TIMER_SECONDS &&
       !window.confirm(
-        `The timer says ${formatDuration(timer.elapsedMs)}. Log it anyway?\n\n` +
+        `The timer says ${formatDuration(elapsedMs)}. Log it anyway?\n\n` +
           'Cancel to go back and type the minutes instead.',
       )
     ) {
@@ -77,7 +84,7 @@ export function LogAttemptForm({ problem }: { problem: ProblemRead }) {
       setLogged(true)
       setValues(EMPTY)
       setFieldErrors({})
-      timer.reset()
+      if (ownsTimer) timer.reset()
       // The attempt moves this problem's next review date.
       void queryClient.invalidateQueries({ queryKey: queryKeys.queue })
     } else {
@@ -92,29 +99,69 @@ export function LogAttemptForm({ problem }: { problem: ProblemRead }) {
 
       <div className="space-y-2">
         <p className="font-medium">Time</p>
-        <div className="flex items-center gap-2">
-          <span className="w-20 font-mono text-2xl" aria-label="Timer">
-            {formatDuration(timer.elapsedMs)}
-          </span>
-          {/* type="button": a plain <button> inside a form would submit it. */}
-          {timer.running ? (
-            <button type="button" onClick={timer.pause} className={buttonClass}>
-              Pause
+        {otherProblemId !== null ? (
+          <p role="status">
+            The timer is in use for{' '}
+            <Link
+              to={`/problems/${otherProblemId}`}
+              className="text-blue-700 hover:underline dark:text-blue-400"
+            >
+              {otherProblem?.title ?? 'another problem'}
+            </Link>
+            . Log or reset it there first, or{' '}
+            {/* Escape hatch if that problem's page can't be reached. */}
+            <button type="button" onClick={timer.reset} className="underline">
+              discard it
             </button>
-          ) : (
-            <button type="button" onClick={timer.start} className={buttonClass}>
-              {timer.elapsedMs > 0 ? 'Resume' : 'Start'}
+            .
+          </p>
+        ) : (
+          <div className="flex items-center gap-2">
+            <span className="w-20 font-mono text-2xl" aria-label="Timer">
+              {formatDuration(elapsedMs)}
+            </span>
+            {/* type="button": a plain <button> inside a form would submit it. */}
+            {timer.running ? (
+              <button type="button" onClick={timer.pause} className={buttonClass}>
+                Pause
+              </button>
+            ) : ownsTimer ? (
+              <button type="button" onClick={() => timer.start(problem.id)} className={buttonClass}>
+                Resume
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => {
+                  timer.start(problem.id)
+                  // Called straight from the click, so popup blockers allow it.
+                  window.open(problem.link, '_blank', 'noopener,noreferrer')
+                }}
+                className={buttonClass}
+              >
+                Start problem
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={timer.reset}
+              disabled={!ownsTimer}
+              className={buttonClass}
+            >
+              Reset
             </button>
-          )}
-          <button
-            type="button"
-            onClick={timer.reset}
-            disabled={!timer.running && timer.elapsedMs === 0}
-            className={buttonClass}
-          >
-            Reset
-          </button>
-        </div>
+            {ownsTimer && (
+              <a
+                href={problem.link}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-700 hover:underline dark:text-blue-400"
+              >
+                Open on LeetCode
+              </a>
+            )}
+          </div>
+        )}
         <label htmlFor="minutes" className="block">
           Or enter minutes (overrides the timer)
         </label>

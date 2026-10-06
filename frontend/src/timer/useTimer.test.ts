@@ -14,7 +14,7 @@ afterEach(() => {
 test('ticks while running and stops when paused', () => {
   const { result } = renderHook(() => useTimer())
 
-  act(() => result.current.start())
+  act(() => result.current.start(7))
   act(() => vi.advanceTimersByTime(90_000))
   expect(result.current.elapsedMs).toBe(90_000)
 
@@ -26,7 +26,7 @@ test('ticks while running and stops when paused', () => {
 
 test('survives a page refresh while running', () => {
   const first = renderHook(() => useTimer())
-  act(() => first.result.current.start())
+  act(() => first.result.current.start(7))
   act(() => vi.advanceTimersByTime(30_000))
   first.unmount() // the "refresh"
 
@@ -39,7 +39,7 @@ test('survives a page refresh while running', () => {
 
 test('reset clears the saved timer', () => {
   const { result } = renderHook(() => useTimer())
-  act(() => result.current.start())
+  act(() => result.current.start(7))
   act(() => vi.advanceTimersByTime(10_000))
 
   act(() => result.current.reset())
@@ -48,6 +48,7 @@ test('reset clears the saved timer', () => {
   expect(JSON.parse(localStorage.getItem(STORAGE_KEY)!)).toEqual({
     bankedMs: 0,
     runningSince: null,
+    problemId: null,
   })
 })
 
