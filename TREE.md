@@ -15,7 +15,7 @@ queue shows what's due
       survives a page refresh, plus manual duration entry as a fallback
 - [x] **Scheduler**: SM-2 style next-review date from result and confidence,
       as a pure function with unit tests
-- [ ] **Today's queue page** (API endpoint + React page)
+- [x] **Today's queue page** (API endpoint + React page)
 - [ ] **Tests** for the scheduler, the main API routes, and the key React
       components
 

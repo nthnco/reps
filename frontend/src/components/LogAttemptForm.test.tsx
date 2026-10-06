@@ -84,6 +84,19 @@ test('typed minutes are sent as seconds, and a blank date is left to the server'
   expect(await screen.findByRole('status')).toHaveTextContent('Logged attempt for Two Sum.')
 })
 
+test('refreshes the queue after logging an attempt', async () => {
+  const user = userEvent.setup()
+  const { queryClient } = renderWithQueryClient(<LogAttemptForm />)
+  const invalidate = vi.spyOn(queryClient, 'invalidateQueries')
+
+  await fillRequired(user)
+  await user.type(screen.getByLabelText(/enter minutes/), '15')
+  await user.click(screen.getByRole('button', { name: 'Log attempt' }))
+
+  await screen.findByRole('status')
+  expect(invalidate).toHaveBeenCalledWith({ queryKey: ['queue'] })
+})
+
 test('uses the timer when minutes are blank, then resets it', async () => {
   localStorage.setItem(STORAGE_KEY, JSON.stringify({ bankedMs: 125_000, runningSince: null }))
   const user = userEvent.setup()
