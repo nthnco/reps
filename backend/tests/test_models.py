@@ -9,7 +9,6 @@ from app.models import Attempt, Difficulty, Pattern, Problem
 
 def make_problem(**overrides) -> Problem:
     fields = dict(
-        number=1,
         title="Two Sum",
         link="https://leetcode.com/problems/two-sum/",
         pattern=Pattern.ARRAYS_HASHING,
@@ -31,7 +30,6 @@ def make_attempt(**overrides) -> Attempt:
 def insert_problem_sql(db, **overrides) -> None:
     # Raw SQL skips the Python enums, so only the database's own rules apply.
     fields = dict(
-        number=1,
         title="Two Sum",
         link="https://leetcode.com/problems/two-sum/",
         pattern="arrays_hashing",
@@ -39,8 +37,8 @@ def insert_problem_sql(db, **overrides) -> None:
     ) | overrides
     db.execute(
         text(
-            "INSERT INTO problems (number, title, link, pattern, difficulty) "
-            "VALUES (:number, :title, :link, :pattern, :difficulty)"
+            "INSERT INTO problems (title, link, pattern, difficulty) "
+            "VALUES (:title, :link, :pattern, :difficulty)"
         ),
         fields,
     )
@@ -73,7 +71,6 @@ def test_enums_are_stored_as_lowercase_values(db):
     [
         ({"pattern": "union_find"}, "ck_problems_pattern"),
         ({"difficulty": "impossible"}, "ck_problems_difficulty"),
-        ({"number": 0}, "ck_problems_number_positive"),
     ],
 )
 def test_database_rejects_bad_problem(db, overrides, constraint):
@@ -81,10 +78,10 @@ def test_database_rejects_bad_problem(db, overrides, constraint):
         insert_problem_sql(db, **overrides)
 
 
-def test_database_rejects_duplicate_problem_number(db):
+def test_database_rejects_duplicate_problem_link(db):
     insert_problem_sql(db)
-    with pytest.raises(IntegrityError, match="uq_problems_number"):
-        insert_problem_sql(db, title="Same number again")
+    with pytest.raises(IntegrityError, match="uq_problems_link"):
+        insert_problem_sql(db, title="Same link again")
 
 
 @pytest.mark.parametrize(

@@ -15,7 +15,6 @@ const createAttemptMock = vi.mocked(createAttempt)
 
 const TWO_SUM: ProblemRead = {
   id: 7,
-  number: 1,
   title: 'Two Sum',
   link: 'https://leetcode.com/problems/two-sum/',
   pattern: 'arrays_hashing',
@@ -49,7 +48,7 @@ async function fillRequired(user: ReturnType<typeof userEvent.setup>) {
 test('lists problems from the API', async () => {
   renderWithQueryClient(<LogAttemptForm />)
 
-  expect(await screen.findByRole('option', { name: '#1 Two Sum' })).toBeInTheDocument()
+  expect(await screen.findByRole('option', { name: 'Two Sum' })).toBeInTheDocument()
 })
 
 test('tells you to add a problem when there are none', async () => {
@@ -82,7 +81,7 @@ test('typed minutes are sent as seconds, and a blank date is left to the server'
     confidence: 4,
     used_hint: false,
   })
-  expect(await screen.findByRole('status')).toHaveTextContent('Logged attempt for #1 Two Sum.')
+  expect(await screen.findByRole('status')).toHaveTextContent('Logged attempt for Two Sum.')
 })
 
 test('uses the timer when minutes are blank, then resets it', async () => {

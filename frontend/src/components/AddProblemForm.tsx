@@ -7,7 +7,7 @@ import { queryKeys } from '../api/queries'
 import { errorProps, Field, inputClass, submitClass } from './fields'
 
 // Everything is a string while editing; converted to ProblemCreate on submit.
-const EMPTY = { number: '', title: '', link: '', pattern: '', difficulty: '', notes: '' }
+const EMPTY = { title: '', link: '', pattern: '', difficulty: '', notes: '' }
 type FormValues = typeof EMPTY
 
 export function AddProblemForm() {
@@ -30,7 +30,6 @@ export function AddProblemForm() {
     setSaved(null)
 
     const body: ProblemCreate = {
-      number: Number(values.number),
       title: values.title,
       link: values.link,
       // The selects are `required`, so the browser won't submit an empty choice.
@@ -56,19 +55,6 @@ export function AddProblemForm() {
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <h2 className="text-xl font-semibold">Add a problem</h2>
-
-      <Field id="number" label="Problem number" error={fieldErrors.number}>
-        <input
-          id="number"
-          type="number"
-          min={1}
-          required
-          value={values.number}
-          onChange={update('number')}
-          className={inputClass}
-          {...errorProps('number', fieldErrors.number)}
-        />
-      </Field>
 
       <Field id="title" label="Title" error={fieldErrors.title}>
         <input
@@ -150,7 +136,7 @@ export function AddProblemForm() {
       )}
       {saved && (
         <p role="status" className="text-green-700 dark:text-green-400">
-          Saved #{saved.number} {saved.title}.
+          Saved {saved.title}.
         </p>
       )}
 

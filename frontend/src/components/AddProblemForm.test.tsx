@@ -15,7 +15,6 @@ beforeEach(() => {
 })
 
 async function fillValidForm(user: ReturnType<typeof userEvent.setup>) {
-  await user.type(screen.getByLabelText('Problem number'), '1')
   await user.type(screen.getByLabelText('Title'), 'Two Sum')
   await user.type(screen.getByLabelText('LeetCode link'), 'https://leetcode.com/problems/two-sum/')
   // Select by value: user-event matches option text via innerHTML, where "&" is "&amp;".
@@ -37,7 +36,6 @@ test('submits the problem, shows success, and clears the form', async () => {
     ok: true,
     problem: {
       id: 7,
-      number: 1,
       title: 'Two Sum',
       link: 'https://leetcode.com/problems/two-sum/',
       pattern: 'arrays_hashing',
@@ -52,14 +50,13 @@ test('submits the problem, shows success, and clears the form', async () => {
   await user.click(screen.getByRole('button', { name: 'Add problem' }))
 
   expect(createProblemMock).toHaveBeenCalledWith({
-    number: 1,
     title: 'Two Sum',
     link: 'https://leetcode.com/problems/two-sum/',
     pattern: 'arrays_hashing',
     difficulty: 'easy',
     notes: '',
   })
-  expect(await screen.findByRole('status')).toHaveTextContent('Saved #1 Two Sum.')
+  expect(await screen.findByRole('status')).toHaveTextContent('Saved Two Sum.')
   expect(screen.getByLabelText('Title')).toHaveValue('')
   expect(invalidate).toHaveBeenCalledWith({ queryKey: ['problems'] })
 })
@@ -68,18 +65,18 @@ test('shows the error message and marks the failing field', async () => {
   const user = userEvent.setup()
   createProblemMock.mockResolvedValue({
     ok: false,
-    message: 'Problem #1 is already in your list.',
-    fieldErrors: { number: 'Problem #1 is already in your list.' },
+    message: 'That problem is already in your list.',
+    fieldErrors: { link: 'That problem is already in your list.' },
   })
   renderWithQueryClient(<AddProblemForm />)
 
   await fillValidForm(user)
   await user.click(screen.getByRole('button', { name: 'Add problem' }))
 
-  expect(await screen.findByRole('alert')).toHaveTextContent('Problem #1 is already in your list.')
-  const numberInput = screen.getByLabelText('Problem number')
-  expect(numberInput).toHaveAttribute('aria-invalid', 'true')
-  expect(numberInput).toHaveAccessibleDescription('Problem #1 is already in your list.')
+  expect(await screen.findByRole('alert')).toHaveTextContent('That problem is already in your list.')
+  const linkInput = screen.getByLabelText('LeetCode link')
+  expect(linkInput).toHaveAttribute('aria-invalid', 'true')
+  expect(linkInput).toHaveAccessibleDescription('That problem is already in your list.')
   // The form keeps what was typed so it can be corrected.
   expect(screen.getByLabelText('Title')).toHaveValue('Two Sum')
 })

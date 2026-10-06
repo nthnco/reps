@@ -72,9 +72,10 @@ class Problem(Base):
     __tablename__ = "problems"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    number: Mapped[int] = mapped_column(unique=True)
     title: Mapped[str] = mapped_column(String(200))
-    link: Mapped[str] = mapped_column(String(500))
+    # Normalized to https://leetcode.com/problems/<slug>/ (see schemas.py), so
+    # the same problem pasted with a different URL shape is still a duplicate.
+    link: Mapped[str] = mapped_column(String(500), unique=True)
     pattern: Mapped[Pattern] = mapped_column(_string_enum(Pattern, "pattern"))
     difficulty: Mapped[Difficulty] = mapped_column(
         _string_enum(Difficulty, "difficulty")
@@ -84,8 +85,6 @@ class Problem(Base):
     attempts: Mapped[list["Attempt"]] = relationship(
         back_populates="problem", cascade="all, delete-orphan"
     )
-
-    __table_args__ = (CheckConstraint("number > 0", name="number_positive"),)
 
 
 class Attempt(Base):

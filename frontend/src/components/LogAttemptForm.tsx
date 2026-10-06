@@ -110,7 +110,7 @@ export function LogAttemptForm() {
             <option value="">Choose a problem…</option>
             {problems.data.map((p) => (
               <option key={p.id} value={p.id}>
-                #{p.number} {p.title}
+                {p.title}
               </option>
             ))}
           </select>
@@ -228,7 +228,7 @@ export function LogAttemptForm() {
       )}
       {logged && (
         <p role="status" className="text-green-700 dark:text-green-400">
-          Logged attempt for #{logged.number} {logged.title}.
+          Logged attempt for {logged.title}.
         </p>
       )}
 

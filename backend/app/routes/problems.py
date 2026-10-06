@@ -14,7 +14,7 @@ router = APIRouter(prefix="/api/problems", tags=["problems"])
 
 @router.get("", response_model=list[ProblemRead])
 def list_problems(db: Annotated[Session, Depends(get_db)]) -> list[Problem]:
-    return list(db.scalars(select(Problem).order_by(Problem.number)))
+    return list(db.scalars(select(Problem).order_by(Problem.title)))
 
 
 @router.post("", response_model=ProblemRead, status_code=status.HTTP_201_CREATED)
@@ -29,10 +29,10 @@ def create_problem(
         db.rollback()
         # Rely on the unique constraint rather than checking first: a check
         # followed by an insert can race (e.g. a double-clicked submit).
-        if "uq_problems_number" in str(exc.orig):
+        if "uq_problems_link" in str(exc.orig):
             raise HTTPException(
                 status.HTTP_409_CONFLICT,
-                f"Problem #{body.number} is already in your list.",
+                "That problem is already in your list.",
             ) from exc
         raise
     db.refresh(problem)

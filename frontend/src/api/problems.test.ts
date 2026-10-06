@@ -3,7 +3,6 @@ import type { ProblemCreate } from './generated'
 import { createProblem, listProblems } from './problems'
 
 const BODY: ProblemCreate = {
-  number: 1,
   title: 'Two Sum',
   link: 'https://leetcode.com/problems/two-sum/',
   pattern: 'arrays_hashing',
@@ -38,15 +37,15 @@ test('posts the problem as JSON and returns it on success', async () => {
   expect(JSON.parse(init.body)).toEqual(BODY)
 })
 
-test('maps a 409 to an error on the number field', async () => {
-  mockFetch(409, { detail: 'Problem #1 is already in your list.' })
+test('maps a 409 to an error on the link field', async () => {
+  mockFetch(409, { detail: 'That problem is already in your list.' })
 
   const result = await createProblem(BODY)
 
   expect(result).toEqual({
     ok: false,
-    message: 'Problem #1 is already in your list.',
-    fieldErrors: { number: 'Problem #1 is already in your list.' },
+    message: 'That problem is already in your list.',
+    fieldErrors: { link: 'That problem is already in your list.' },
   })
 })
 

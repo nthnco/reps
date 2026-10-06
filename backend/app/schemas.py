@@ -1,9 +1,10 @@
 """Request/response shapes for the JSON API (Pydantic), separate from the DB models.
 
 These check one request in isolation. Rules that need the database (like
-duplicate problem numbers) are enforced in the routes.
+duplicate problem links) are enforced in the routes.
 """
 
+import re
 from datetime import date
 from typing import Annotated
 from urllib.parse import urlsplit
@@ -14,15 +15,25 @@ from app.clock import local_today
 from app.models import Difficulty, Pattern
 
 
-def _leetcode_problem_url(link: str) -> str:
+_SLUG = re.compile(r"[a-z0-9-]+")
+
+
+def normalize_leetcode_link(link: str) -> str:
+    """Reduce any LeetCode problem URL to https://leetcode.com/problems/<slug>/.
+
+    Drops www., trailing pages like /description/, query strings and fragments.
+    """
     parts = urlsplit(link)
+    segments = parts.path.split("/")  # "/problems/two-sum/x" -> ["", "problems", "two-sum", "x"]
+    slug = segments[2].lower() if len(segments) > 2 else ""
     if (
         parts.scheme != "https"
         or parts.hostname not in ("leetcode.com", "www.leetcode.com")
-        or not parts.path.startswith("/problems/")
+        or segments[1] != "problems"
+        or not _SLUG.fullmatch(slug)
     ):
         raise ValueError("must be a https://leetcode.com/problems/... link")
-    return link
+    return f"https://leetcode.com/problems/{slug}/"
 
 
 # Length limits match the column sizes in models.py.
@@ -30,12 +41,11 @@ Title = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, ma
 Link = Annotated[
     str,
     StringConstraints(strip_whitespace=True, max_length=500),
-    AfterValidator(_leetcode_problem_url),
+    AfterValidator(normalize_leetcode_link),
 ]
 
 
 class ProblemCreate(BaseModel):
-    number: int = Field(gt=0)
     title: Title
     link: Link
     pattern: Pattern
@@ -47,7 +57,6 @@ class ProblemRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: int
-    number: int
     title: str
     link: str
     pattern: Pattern

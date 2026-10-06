@@ -5,7 +5,6 @@ import pytest
 from app.clock import local_today
 
 PROBLEM = {
-    "number": 1,
     "title": "Two Sum",
     "link": "https://leetcode.com/problems/two-sum/",
     "pattern": "arrays_hashing",
@@ -19,15 +18,15 @@ def problem_id(client) -> int:
     return client.post("/api/problems", json=PROBLEM).json()["id"]
 
 
-def test_list_problems_sorted_by_number(client):
-    client.post("/api/problems", json=PROBLEM | {"number": 20, "title": "Valid Parentheses",
+def test_list_problems_sorted_by_title(client):
+    client.post("/api/problems", json=PROBLEM | {"title": "Valid Parentheses",
                 "link": "https://leetcode.com/problems/valid-parentheses/"})
     client.post("/api/problems", json=PROBLEM)
 
     response = client.get("/api/problems")
 
     assert response.status_code == 200
-    assert [p["number"] for p in response.json()] == [1, 20]
+    assert [p["title"] for p in response.json()] == ["Two Sum", "Valid Parentheses"]
 
 
 def test_create_attempt_defaults_to_today(client, problem_id):
