@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event'
 import { beforeEach, expect, test, vi } from 'vitest'
 import { PATTERN_LABELS } from '../api/labels'
 import { createProblem } from '../api/problems'
-import { renderWithQueryClient } from '../test/render'
+import { renderWithProviders } from '../test/render'
 import { AddProblemForm } from './AddProblemForm'
 
 // The API helper has its own tests; here we only check the form's behaviour.
@@ -23,7 +23,7 @@ async function fillValidForm(user: ReturnType<typeof userEvent.setup>) {
 }
 
 test('the pattern dropdown offers every pattern', () => {
-  renderWithQueryClient(<AddProblemForm />)
+  renderWithProviders(<AddProblemForm />)
 
   const options = within(screen.getByLabelText('Pattern')).getAllByRole('option')
   // +1 for the "Choose a pattern…" placeholder.
@@ -43,7 +43,7 @@ test('submits the problem, shows success, and clears the form', async () => {
       notes: '',
     },
   })
-  const { queryClient } = renderWithQueryClient(<AddProblemForm />)
+  const { queryClient } = renderWithProviders(<AddProblemForm />)
   const invalidate = vi.spyOn(queryClient, 'invalidateQueries')
 
   await fillValidForm(user)
@@ -69,7 +69,7 @@ test('shows the error message and marks the failing field', async () => {
     message: 'That problem is already in your list.',
     fieldErrors: { link: 'That problem is already in your list.' },
   })
-  renderWithQueryClient(<AddProblemForm />)
+  renderWithProviders(<AddProblemForm />)
 
   await fillValidForm(user)
   await user.click(screen.getByRole('button', { name: 'Add problem' }))
@@ -84,7 +84,7 @@ test('shows the error message and marks the failing field', async () => {
 
 test('does not submit when required fields are empty', async () => {
   const user = userEvent.setup()
-  renderWithQueryClient(<AddProblemForm />)
+  renderWithProviders(<AddProblemForm />)
 
   await user.click(screen.getByRole('button', { name: 'Add problem' }))
 

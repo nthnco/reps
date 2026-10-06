@@ -1,5 +1,6 @@
 import { useQueryClient } from '@tanstack/react-query'
 import { useState, type ChangeEvent, type SubmitEvent } from 'react'
+import { Link } from 'react-router'
 import { createAttempt, type AttemptFieldErrors } from '../api/attempts'
 import type { AttemptCreate, ProblemRead } from '../api/generated'
 import { queryKeys, useProblems } from '../api/queries'
@@ -8,7 +9,6 @@ import { useTimer } from '../timer/useTimer'
 import { errorProps, Field, FieldError, inputClass, submitClass } from './fields'
 
 const EMPTY = {
-  problemId: '',
   minutes: '',
   solved: '', // 'yes' | 'no'
   confidence: '', // '1'..'5'
@@ -22,17 +22,20 @@ const LONG_TIMER_SECONDS = 3 * 60 * 60
 const buttonClass =
   'rounded border border-gray-300 px-3 py-1 hover:bg-gray-100 disabled:opacity-50 dark:border-gray-600 dark:hover:bg-gray-800'
 
-export function LogAttemptForm() {
+export function LogAttemptForm({ problem }: { problem: ProblemRead }) {
   const queryClient = useQueryClient()
-  const problems = useProblems()
   const timer = useTimer()
+  // Only one problem is timed at a time (even while paused), so this form
+  // ignores a timer that belongs to another problem.
+  const ownsTimer = timer.problemId === problem.id
+  const elapsedMs = ownsTimer ? timer.elapsedMs : 0
+  const otherProblemId = timer.problemId !== null && !ownsTimer ? timer.problemId : null
+  const otherProblem = useProblems().data?.find((p) => p.id === otherProblemId)
   const [values, setValues] = useState<FormValues>(EMPTY)
   const [fieldErrors, setFieldErrors] = useState<AttemptFieldErrors>({})
   const [message, setMessage] = useState<string | null>(null)
-  const [logged, setLogged] = useState<ProblemRead | null>(null)
+  const [logged, setLogged] = useState(false)
   const [submitting, setSubmitting] = useState(false)
-  // Without the dropdown there's no `required` problem field to block submit.
-  const hasProblems = (problems.data?.length ?? 0) > 0
 
   function update(field: Exclude<keyof FormValues, 'usedHint'>) {
     return (event: ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
@@ -42,13 +45,13 @@ export function LogAttemptForm() {
   async function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault()
     setMessage(null)
-    setLogged(null)
+    setLogged(false)
 
     // Typed minutes win; otherwise use the timer.
     const durationSeconds =
       values.minutes !== ''
         ? Math.round(Number(values.minutes) * 60)
-        : Math.floor(timer.elapsedMs / 1000)
+        : Math.floor(elapsedMs / 1000)
     if (values.minutes === '' && durationSeconds === 0) {
       setFieldErrors({ duration_seconds: 'Start the timer or enter minutes.' })
       return
@@ -58,7 +61,7 @@ export function LogAttemptForm() {
       values.minutes === '' &&
       durationSeconds > LONG_TIMER_SECONDS &&
       !window.confirm(
-        `The timer says ${formatDuration(timer.elapsedMs)}. Log it anyway?\n\n` +
+        `The timer says ${formatDuration(elapsedMs)}. Log it anyway?\n\n` +
           'Cancel to go back and type the minutes instead.',
       )
     ) {
@@ -74,14 +77,14 @@ export function LogAttemptForm() {
     }
 
     setSubmitting(true)
-    const result = await createAttempt(Number(values.problemId), body)
+    const result = await createAttempt(problem.id, body)
     setSubmitting(false)
 
     if (result.ok) {
-      setLogged(problems.data?.find((p) => p.id === result.attempt.problem_id) ?? null)
+      setLogged(true)
       setValues(EMPTY)
       setFieldErrors({})
-      timer.reset()
+      if (ownsTimer) timer.reset()
       // The attempt moves this problem's next review date.
       void queryClient.invalidateQueries({ queryKey: queryKeys.queue })
     } else {
@@ -92,60 +95,73 @@ export function LogAttemptForm() {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <h2 className="text-xl font-semibold">Log an attempt</h2>
-
-      <Field id="problem" label="Problem">
-        {problems.isPending ? (
-          <p>Loading problems…</p>
-        ) : problems.isError ? (
-          <p role="alert" className="text-red-600 dark:text-red-400">
-            {problems.error.message}
-          </p>
-        ) : problems.data.length === 0 ? (
-          <p>No problems yet. Add one above first.</p>
-        ) : (
-          <select
-            id="problem"
-            required
-            value={values.problemId}
-            onChange={update('problemId')}
-            className={inputClass}
-          >
-            <option value="">Choose a problem…</option>
-            {problems.data.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.title}
-              </option>
-            ))}
-          </select>
-        )}
-      </Field>
+      <h3 className="text-lg font-semibold">Log an attempt</h3>
 
       <div className="space-y-2">
         <p className="font-medium">Time</p>
-        <div className="flex items-center gap-2">
-          <span className="w-20 font-mono text-2xl" aria-label="Timer">
-            {formatDuration(timer.elapsedMs)}
-          </span>
-          {/* type="button": a plain <button> inside a form would submit it. */}
-          {timer.running ? (
-            <button type="button" onClick={timer.pause} className={buttonClass}>
-              Pause
+        {otherProblemId !== null ? (
+          <p role="status">
+            The timer is in use for{' '}
+            <Link
+              to={`/problems/${otherProblemId}`}
+              className="text-blue-700 hover:underline dark:text-blue-400"
+            >
+              {otherProblem?.title ?? 'another problem'}
+            </Link>
+            . Log or reset it there first, or{' '}
+            {/* Escape hatch if that problem's page can't be reached. */}
+            <button type="button" onClick={timer.reset} className="underline">
+              discard it
             </button>
-          ) : (
-            <button type="button" onClick={timer.start} className={buttonClass}>
-              {timer.elapsedMs > 0 ? 'Resume' : 'Start'}
+            .
+          </p>
+        ) : (
+          <div className="flex items-center gap-2">
+            <span className="w-20 font-mono text-2xl" aria-label="Timer">
+              {formatDuration(elapsedMs)}
+            </span>
+            {/* type="button": a plain <button> inside a form would submit it. */}
+            {timer.running ? (
+              <button type="button" onClick={timer.pause} className={buttonClass}>
+                Pause
+              </button>
+            ) : ownsTimer ? (
+              <button type="button" onClick={() => timer.start(problem.id)} className={buttonClass}>
+                Resume
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => {
+                  timer.start(problem.id)
+                  // Called straight from the click, so popup blockers allow it.
+                  window.open(problem.link, '_blank', 'noopener,noreferrer')
+                }}
+                className={buttonClass}
+              >
+                Start problem
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={timer.reset}
+              disabled={!ownsTimer}
+              className={buttonClass}
+            >
+              Reset
             </button>
-          )}
-          <button
-            type="button"
-            onClick={timer.reset}
-            disabled={!timer.running && timer.elapsedMs === 0}
-            className={buttonClass}
-          >
-            Reset
-          </button>
-        </div>
+            {ownsTimer && (
+              <a
+                href={problem.link}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-700 hover:underline dark:text-blue-400"
+              >
+                Open on LeetCode
+              </a>
+            )}
+          </div>
+        )}
         <label htmlFor="minutes" className="block">
           Or enter minutes (overrides the timer)
         </label>
@@ -232,11 +248,11 @@ export function LogAttemptForm() {
       )}
       {logged && (
         <p role="status" className="text-green-700 dark:text-green-400">
-          Logged attempt for {logged.title}.
+          Logged attempt for {problem.title}.
         </p>
       )}
 
-      <button type="submit" disabled={submitting || !hasProblems} className={submitClass}>
+      <button type="submit" disabled={submitting} className={submitClass}>
         {submitting ? 'Saving…' : 'Log attempt'}
       </button>
     </form>
