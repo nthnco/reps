@@ -1,3 +1,4 @@
+import { Link } from 'react-router'
 import { DIFFICULTY_LABELS, PATTERN_LABELS } from '../api/labels'
 import { useTodaysQueue } from '../api/queries'
 import { formatDueDate } from '../dates'
@@ -22,14 +23,12 @@ export function TodaysQueue() {
           {queue.data.map(({ problem, due_on }) => (
             <li key={problem.id} className="flex items-center justify-between gap-4 p-3">
               <div>
-                <a
-                  href={problem.link}
-                  target="_blank"
-                  rel="noopener noreferrer"
+                <Link
+                  to={`/problems/${problem.id}`}
                   className="font-medium text-blue-700 hover:underline dark:text-blue-400"
                 >
                   {problem.title}
-                </a>
+                </Link>
                 <p className="text-sm text-gray-600 dark:text-gray-400">
                   {PATTERN_LABELS[problem.pattern]} · {DIFFICULTY_LABELS[problem.difficulty]}
                 </p>

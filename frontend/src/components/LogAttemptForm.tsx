@@ -2,13 +2,12 @@ import { useQueryClient } from '@tanstack/react-query'
 import { useState, type ChangeEvent, type SubmitEvent } from 'react'
 import { createAttempt, type AttemptFieldErrors } from '../api/attempts'
 import type { AttemptCreate, ProblemRead } from '../api/generated'
-import { queryKeys, useProblems } from '../api/queries'
+import { queryKeys } from '../api/queries'
 import { formatDuration } from '../timer/timer'
 import { useTimer } from '../timer/useTimer'
 import { errorProps, Field, FieldError, inputClass, submitClass } from './fields'
 
 const EMPTY = {
-  problemId: '',
   minutes: '',
   solved: '', // 'yes' | 'no'
   confidence: '', // '1'..'5'
@@ -22,17 +21,14 @@ const LONG_TIMER_SECONDS = 3 * 60 * 60
 const buttonClass =
   'rounded border border-gray-300 px-3 py-1 hover:bg-gray-100 disabled:opacity-50 dark:border-gray-600 dark:hover:bg-gray-800'
 
-export function LogAttemptForm() {
+export function LogAttemptForm({ problem }: { problem: ProblemRead }) {
   const queryClient = useQueryClient()
-  const problems = useProblems()
   const timer = useTimer()
   const [values, setValues] = useState<FormValues>(EMPTY)
   const [fieldErrors, setFieldErrors] = useState<AttemptFieldErrors>({})
   const [message, setMessage] = useState<string | null>(null)
-  const [logged, setLogged] = useState<ProblemRead | null>(null)
+  const [logged, setLogged] = useState(false)
   const [submitting, setSubmitting] = useState(false)
-  // Without the dropdown there's no `required` problem field to block submit.
-  const hasProblems = (problems.data?.length ?? 0) > 0
 
   function update(field: Exclude<keyof FormValues, 'usedHint'>) {
     return (event: ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
@@ -42,7 +38,7 @@ export function LogAttemptForm() {
   async function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault()
     setMessage(null)
-    setLogged(null)
+    setLogged(false)
 
     // Typed minutes win; otherwise use the timer.
     const durationSeconds =
@@ -74,11 +70,11 @@ export function LogAttemptForm() {
     }
 
     setSubmitting(true)
-    const result = await createAttempt(Number(values.problemId), body)
+    const result = await createAttempt(problem.id, body)
     setSubmitting(false)
 
     if (result.ok) {
-      setLogged(problems.data?.find((p) => p.id === result.attempt.problem_id) ?? null)
+      setLogged(true)
       setValues(EMPTY)
       setFieldErrors({})
       timer.reset()
@@ -92,34 +88,7 @@ export function LogAttemptForm() {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <h2 className="text-xl font-semibold">Log an attempt</h2>
-
-      <Field id="problem" label="Problem">
-        {problems.isPending ? (
-          <p>Loading problems…</p>
-        ) : problems.isError ? (
-          <p role="alert" className="text-red-600 dark:text-red-400">
-            {problems.error.message}
-          </p>
-        ) : problems.data.length === 0 ? (
-          <p>No problems yet. Add one above first.</p>
-        ) : (
-          <select
-            id="problem"
-            required
-            value={values.problemId}
-            onChange={update('problemId')}
-            className={inputClass}
-          >
-            <option value="">Choose a problem…</option>
-            {problems.data.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.title}
-              </option>
-            ))}
-          </select>
-        )}
-      </Field>
+      <h3 className="text-lg font-semibold">Log an attempt</h3>
 
       <div className="space-y-2">
         <p className="font-medium">Time</p>
@@ -232,11 +201,11 @@ export function LogAttemptForm() {
       )}
       {logged && (
         <p role="status" className="text-green-700 dark:text-green-400">
-          Logged attempt for {logged.title}.
+          Logged attempt for {problem.title}.
         </p>
       )}
 
-      <button type="submit" disabled={submitting || !hasProblems} className={submitClass}>
+      <button type="submit" disabled={submitting} className={submitClass}>
         {submitting ? 'Saving…' : 'Log attempt'}
       </button>
     </form>

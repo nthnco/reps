@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, expect, test, vi } from 'vitest'
 import App from './App'
 import type { ProblemRead } from './api/generated'
-import { renderWithQueryClient } from './test/render'
+import { renderWithProviders } from './test/render'
 
 const TWO_SUM: ProblemRead = {
   id: 7,
@@ -50,22 +50,40 @@ afterEach(() => {
 })
 
 test('renders the app heading', () => {
-  renderWithQueryClient(<App />)
+  renderWithProviders(<App />)
   expect(screen.getByRole('heading', { name: 'Reps' })).toBeInTheDocument()
 })
 
 test('logging an attempt takes the problem off the queue', async () => {
   const user = userEvent.setup()
-  renderWithQueryClient(<App />)
+  renderWithProviders(<App />)
 
-  const queue = screen.getByRole('heading', { name: "Today's queue" }).closest('section')!
-  expect(await within(queue).findByRole('link', { name: 'Two Sum' })).toBeInTheDocument()
+  const queue = () => screen.getByRole('heading', { name: "Today's queue" }).closest('section')!
+  await user.click(await within(queue()).findByRole('link', { name: 'Two Sum' }))
 
-  await user.selectOptions(await screen.findByLabelText('Problem'), '7')
+  expect(await screen.findByRole('heading', { name: 'Two Sum' })).toBeInTheDocument()
   await user.type(screen.getByLabelText(/enter minutes/), '15')
   await user.click(screen.getByRole('radio', { name: 'Solved' }))
   await user.click(screen.getByRole('radio', { name: '4' }))
   await user.click(screen.getByRole('button', { name: 'Log attempt' }))
+  await screen.findByRole('status')
 
-  expect(await within(queue).findByText('Nothing due today.')).toBeInTheDocument()
+  await user.click(screen.getByRole('link', { name: '← All problems' }))
+  expect(await within(queue()).findByText('Nothing due today.')).toBeInTheDocument()
+})
+
+test('the problem page says so when the problem does not exist', async () => {
+  renderWithProviders(<App />, { route: '/problems/999' })
+
+  expect(await screen.findByText("That problem doesn't exist.")).toBeInTheDocument()
+})
+
+test('all problems link to their problem pages', async () => {
+  renderWithProviders(<App />)
+
+  const list = screen.getByRole('heading', { name: 'All problems' }).closest('section')!
+  expect(await within(list).findByRole('link', { name: 'Two Sum' })).toHaveAttribute(
+    'href',
+    '/problems/7',
+  )
 })

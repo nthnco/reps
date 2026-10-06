@@ -3,14 +3,11 @@ import userEvent from '@testing-library/user-event'
 import { beforeEach, expect, test, vi } from 'vitest'
 import { createAttempt } from '../api/attempts'
 import type { ProblemRead } from '../api/generated'
-import { listProblems } from '../api/problems'
-import { renderWithQueryClient } from '../test/render'
+import { renderWithProviders } from '../test/render'
 import { STORAGE_KEY } from '../timer/useTimer'
 import { LogAttemptForm } from './LogAttemptForm'
 
-vi.mock('../api/problems', () => ({ listProblems: vi.fn() }))
 vi.mock('../api/attempts', () => ({ createAttempt: vi.fn() }))
-const listProblemsMock = vi.mocked(listProblems)
 const createAttemptMock = vi.mocked(createAttempt)
 
 const TWO_SUM: ProblemRead = {
@@ -24,7 +21,6 @@ const TWO_SUM: ProblemRead = {
 
 beforeEach(() => {
   localStorage.clear()
-  listProblemsMock.mockReset().mockResolvedValue([TWO_SUM])
   createAttemptMock.mockReset().mockResolvedValue({
     ok: true,
     attempt: {
@@ -40,36 +36,13 @@ beforeEach(() => {
 })
 
 async function fillRequired(user: ReturnType<typeof userEvent.setup>) {
-  await user.selectOptions(await screen.findByLabelText('Problem'), '7')
   await user.click(screen.getByRole('radio', { name: 'Solved' }))
   await user.click(screen.getByRole('radio', { name: '4' }))
 }
 
-test('lists problems from the API', async () => {
-  renderWithQueryClient(<LogAttemptForm />)
-
-  expect(await screen.findByRole('option', { name: 'Two Sum' })).toBeInTheDocument()
-})
-
-test('tells you to add a problem when there are none', async () => {
-  listProblemsMock.mockResolvedValue([])
-  renderWithQueryClient(<LogAttemptForm />)
-
-  expect(await screen.findByText('No problems yet. Add one above first.')).toBeInTheDocument()
-  expect(screen.getByRole('button', { name: 'Log attempt' })).toBeDisabled()
-})
-
-test('submit is disabled while problems are loading', () => {
-  listProblemsMock.mockReturnValue(new Promise(() => {})) // never resolves
-  renderWithQueryClient(<LogAttemptForm />)
-
-  expect(screen.getByText('Loading problems…')).toBeInTheDocument()
-  expect(screen.getByRole('button', { name: 'Log attempt' })).toBeDisabled()
-})
-
 test('typed minutes are sent as seconds, and a blank date is left to the server', async () => {
   const user = userEvent.setup()
-  renderWithQueryClient(<LogAttemptForm />)
+  renderWithProviders(<LogAttemptForm problem={TWO_SUM} />)
 
   await fillRequired(user)
   await user.type(screen.getByLabelText(/enter minutes/), '15')
@@ -86,7 +59,7 @@ test('typed minutes are sent as seconds, and a blank date is left to the server'
 
 test('refreshes the queue after logging an attempt', async () => {
   const user = userEvent.setup()
-  const { queryClient } = renderWithQueryClient(<LogAttemptForm />)
+  const { queryClient } = renderWithProviders(<LogAttemptForm problem={TWO_SUM} />)
   const invalidate = vi.spyOn(queryClient, 'invalidateQueries')
 
   await fillRequired(user)
@@ -100,7 +73,7 @@ test('refreshes the queue after logging an attempt', async () => {
 test('uses the timer when minutes are blank, then resets it', async () => {
   localStorage.setItem(STORAGE_KEY, JSON.stringify({ bankedMs: 125_000, runningSince: null }))
   const user = userEvent.setup()
-  renderWithQueryClient(<LogAttemptForm />)
+  renderWithProviders(<LogAttemptForm problem={TWO_SUM} />)
   expect(screen.getByLabelText('Timer')).toHaveTextContent('02:05')
 
   await fillRequired(user)
@@ -113,7 +86,7 @@ test('uses the timer when minutes are blank, then resets it', async () => {
 
 test('asks for a duration when the timer is at zero and minutes are blank', async () => {
   const user = userEvent.setup()
-  renderWithQueryClient(<LogAttemptForm />)
+  renderWithProviders(<LogAttemptForm problem={TWO_SUM} />)
 
   await fillRequired(user)
   await user.click(screen.getByRole('button', { name: 'Log attempt' }))
@@ -132,7 +105,7 @@ test.each([
   localStorage.setItem(STORAGE_KEY, JSON.stringify({ bankedMs: elevenHours, runningSince: null }))
   const confirm = vi.spyOn(window, 'confirm').mockReturnValue(answer)
   const user = userEvent.setup()
-  renderWithQueryClient(<LogAttemptForm />)
+  renderWithProviders(<LogAttemptForm problem={TWO_SUM} />)
 
   await fillRequired(user)
   await user.click(screen.getByRole('button', { name: 'Log attempt' }))
@@ -146,7 +119,7 @@ test('typed minutes skip the long-timer question', async () => {
   localStorage.setItem(STORAGE_KEY, JSON.stringify({ bankedMs: 11 * 3_600_000, runningSince: null }))
   const confirm = vi.spyOn(window, 'confirm')
   const user = userEvent.setup()
-  renderWithQueryClient(<LogAttemptForm />)
+  renderWithProviders(<LogAttemptForm problem={TWO_SUM} />)
 
   await fillRequired(user)
   await user.type(screen.getByLabelText(/enter minutes/), '20')
@@ -159,7 +132,7 @@ test('typed minutes skip the long-timer question', async () => {
 
 test('timer buttons do not submit the form', async () => {
   const user = userEvent.setup()
-  renderWithQueryClient(<LogAttemptForm />)
+  renderWithProviders(<LogAttemptForm problem={TWO_SUM} />)
   await fillRequired(user)
 
   await user.click(screen.getByRole('button', { name: 'Start' }))
