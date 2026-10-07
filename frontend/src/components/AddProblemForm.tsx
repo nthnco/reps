@@ -47,6 +47,8 @@ export function AddProblemForm() {
       // Anything showing the problem list (e.g. the log-attempt dropdown) refetches.
       void queryClient.invalidateQueries({ queryKey: queryKeys.problems })
       void queryClient.invalidateQueries({ queryKey: queryKeys.queue })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.patternMastery })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.profileSummary })
     } else {
       setMessage(result.message)
       setFieldErrors(result.fieldErrors)

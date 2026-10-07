@@ -85,8 +85,10 @@ export function LogAttemptForm({ problem }: { problem: ProblemRead }) {
       setValues(EMPTY)
       setFieldErrors({})
       if (ownsTimer) timer.reset()
-      // The attempt moves this problem's next review date.
+      // The attempt moves this problem's next review date and its pattern's mastery.
       void queryClient.invalidateQueries({ queryKey: queryKeys.queue })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.patternMastery })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.profileSummary })
     } else {
       setMessage(result.message)
       setFieldErrors(result.fieldErrors)
