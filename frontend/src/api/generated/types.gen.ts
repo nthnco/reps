@@ -80,6 +80,30 @@ export type HttpValidationError = {
 };
 
 /**
+ * LoginBody
+ */
+export type LoginBody = {
+    /**
+     * Username
+     */
+    username: string;
+    /**
+     * Password
+     */
+    password: string;
+};
+
+/**
+ * Me
+ */
+export type Me = {
+    /**
+     * Username
+     */
+    username: string | null;
+};
+
+/**
  * Pattern
  */
 export type Pattern = 'arrays_hashing' | 'two_pointers' | 'sliding_window' | 'stack' | 'binary_search' | 'linked_list' | 'trees' | 'tries' | 'heap' | 'backtracking' | 'graphs' | 'advanced_graphs' | 'dp_1d' | 'dp_2d' | 'greedy' | 'intervals' | 'math_geometry' | 'bit_manipulation';
@@ -166,6 +190,63 @@ export type ValidationError = {
         [key: string]: unknown;
     };
 };
+
+export type LoginApiAuthLoginPostData = {
+    body: LoginBody;
+    path?: never;
+    query?: never;
+    url: '/api/auth/login';
+};
+
+export type LoginApiAuthLoginPostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type LoginApiAuthLoginPostError = LoginApiAuthLoginPostErrors[keyof LoginApiAuthLoginPostErrors];
+
+export type LoginApiAuthLoginPostResponses = {
+    /**
+     * Successful Response
+     */
+    204: void;
+};
+
+export type LoginApiAuthLoginPostResponse = LoginApiAuthLoginPostResponses[keyof LoginApiAuthLoginPostResponses];
+
+export type LogoutApiAuthLogoutPostData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/auth/logout';
+};
+
+export type LogoutApiAuthLogoutPostResponses = {
+    /**
+     * Successful Response
+     */
+    204: void;
+};
+
+export type LogoutApiAuthLogoutPostResponse = LogoutApiAuthLogoutPostResponses[keyof LogoutApiAuthLogoutPostResponses];
+
+export type MeApiAuthMeGetData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/auth/me';
+};
+
+export type MeApiAuthMeGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: Me;
+};
+
+export type MeApiAuthMeGetResponse = MeApiAuthMeGetResponses[keyof MeApiAuthMeGetResponses];
 
 export type ListProblemsApiProblemsGetData = {
     body?: never;

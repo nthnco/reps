@@ -19,6 +19,9 @@ COPY backend/ ./
 COPY --from=frontend /app/frontend/dist /app/frontend/dist
 
 ENV PATH="/app/backend/.venv/bin:$PATH" STATIC_DIR=/app/frontend/dist
+# Fail closed: the app won't start without login credentials unless a deploy
+# explicitly opts out (the read-only demo will).
+ENV REQUIRE_LOGIN=true
 # Migrate, then serve. `exec` hands PID 1 to uvicorn so it receives the
 # platform's shutdown signal. --proxy-headers lets the app see the original
 # https scheme behind the host's load balancer.
