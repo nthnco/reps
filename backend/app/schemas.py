@@ -106,6 +106,7 @@ class PatternMasteryRead(BaseModel):
     low_data: bool  # certainty below the configured minimum
     attempt_count: int
     problem_count: int
+    problems_attempted: int
     due_count: int  # attempted problems due for review today or earlier
     last_practiced_on: date | None
     median_solve_seconds: int | None
@@ -117,6 +118,7 @@ class RatingPartRead(BaseModel):
     pattern: Pattern
     weight: float
     displayed_mastery: float
+    counted: bool  # enough problems attempted to count toward `overall`
 
 
 class ProfileSummaryRead(BaseModel):

@@ -74,6 +74,7 @@ def get_pattern_mastery(db: Annotated[Session, Depends(get_db)]) -> list[Pattern
             low_data=row.certainty < cfg.MIN_CERTAINTY,
             attempt_count=row.attempt_count,
             problem_count=problem_counts[row.pattern],
+            problems_attempted=row.problems_attempted,
             due_count=sum(1 for s in states[row.pattern] if s.due_on <= today),
             last_practiced_on=row.last_practiced_on,
             median_solve_seconds=row.median_solve_seconds,

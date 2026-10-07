@@ -249,10 +249,12 @@ def test_total_completed_counts_problems_solved_at_least_once():
 # --- profile summary ---
 
 
-def summary_from(attempts_by_pattern: dict[Pattern, int], displayed: dict[Pattern, float]):
+def summary_from(problems_by_pattern: dict[Pattern, int], displayed: dict[Pattern, float]):
+    """n distinct problems per pattern, one clean attempt each; `displayed` overrides decay."""
     problems = [
-        FakeProblem(pattern, attempts=[FakeAttempt() for _ in range(n)])
-        for pattern, n in attempts_by_pattern.items()
+        FakeProblem(pattern, attempts=[FakeAttempt()])
+        for pattern, n in problems_by_pattern.items()
+        for _ in range(n)
     ]
     shown = {p: displayed.get(p, 0.0) for p in Pattern}
     return profile_summary(pattern_mastery(problems), shown, total_completed(problems))
@@ -267,20 +269,36 @@ def test_summary_with_no_attempts():
     assert summary.total_completed == 0
 
 
-def test_overall_is_the_weighted_mean_over_all_patterns():
-    summary = summary_from({Pattern.STACK: 1}, {Pattern.STACK: 0.9})
+def test_overall_averages_only_patterns_with_enough_problems():
+    summary = summary_from(
+        {Pattern.STACK: 2, Pattern.HEAP: 3, Pattern.TRIES: 1},
+        {Pattern.STACK: 0.9, Pattern.HEAP: 0.7, Pattern.TRIES: 0.1},
+    )
 
-    # Equal weights: one pattern at 0.9, seventeen untouched at 0.
-    assert summary.overall == pytest.approx(0.9 / len(Pattern))
+    # TRIES has one problem, so it doesn't count; untouched patterns don't either.
+    assert summary.overall == pytest.approx(0.8)
+    counted = {part.pattern for part in summary.breakdown if part.counted}
+    assert counted == {Pattern.STACK, Pattern.HEAP}
     assert len(summary.breakdown) == len(Pattern)
 
 
-def test_overall_respects_custom_weights():
-    rows = pattern_mastery([FakeProblem(Pattern.STACK, attempts=[FakeAttempt()])])
-    shown = {p: 0.0 for p in Pattern} | {Pattern.STACK: 0.8}
-    weights = {p: 0.0 for p in Pattern} | {Pattern.STACK: 3.0, Pattern.HEAP: 1.0}
+def test_overall_is_zero_until_a_pattern_counts():
+    summary = summary_from({Pattern.STACK: 1}, {Pattern.STACK: 0.9})
 
-    assert profile_summary(rows, shown, 1, weights).overall == pytest.approx(0.6)
+    assert summary.overall == 0.0
+    assert not any(part.counted for part in summary.breakdown)
+
+
+def test_overall_respects_custom_weights():
+    problems = [
+        FakeProblem(p, attempts=[FakeAttempt()])
+        for p in (Pattern.STACK, Pattern.STACK, Pattern.HEAP, Pattern.HEAP)
+    ]
+    shown = {p: 0.0 for p in Pattern} | {Pattern.STACK: 0.8}
+    weights = {p: 1.0 for p in Pattern} | {Pattern.STACK: 3.0}
+
+    # (3 * 0.8 + 1 * 0.0) / 4
+    assert profile_summary(pattern_mastery(problems), shown, 2, weights).overall == pytest.approx(0.6)
 
 
 def test_strengths_need_enough_attempts_and_high_mastery():

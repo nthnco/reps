@@ -49,6 +49,7 @@ class PatternMastery:
     mastery: float  # raw, before decay; 0.0 when there are no attempts
     peak: float
     attempt_count: int
+    problems_attempted: int  # distinct problems with at least one attempt
     certainty: float
     last_practiced_on: date | None
     median_solve_seconds: int | None  # None: nothing in the pattern solved yet
@@ -59,11 +60,12 @@ class RatingPart:
     pattern: Pattern
     weight: float
     displayed_mastery: float
+    counted: bool  # enough problems attempted to count toward the overall rating
 
 
 @dataclass(frozen=True)
 class ProfileSummary:
-    overall: float  # weighted mean of displayed mastery; untouched patterns count as 0
+    overall: float  # weighted mean of displayed mastery over counted patterns; 0 if none
     breakdown: tuple[RatingPart, ...]
     strengths: tuple[Pattern, ...]
     weaknesses: tuple[Pattern, ...]  # weakest attempted patterns below MASTERED_AT
@@ -130,6 +132,7 @@ def pattern_mastery(problems: Iterable[ProblemLike]) -> list[PatternMastery]:
                 mastery=state.mastery,
                 peak=state.peak,
                 attempt_count=state.attempt_count,
+                problems_attempted=sum(1 for p in group if p.attempts),
                 certainty=certainty(state.attempt_count),
                 last_practiced_on=timeline[-1][0].attempted_on if timeline else None,
                 median_solve_seconds=round(median(solve_times)) if solve_times else None,
@@ -162,12 +165,18 @@ def profile_summary(
     weights: Mapping[Pattern, float] = cfg.PATTERN_WEIGHTS,
 ) -> ProfileSummary:
     breakdown = tuple(
-        RatingPart(row.pattern, weights[row.pattern], displayed[row.pattern])
+        RatingPart(
+            row.pattern,
+            weights[row.pattern],
+            displayed[row.pattern],
+            counted=row.problems_attempted >= cfg.OVERALL_MIN_PROBLEMS,
+        )
         for row in rows
     )
-    total_weight = sum(part.weight for part in breakdown)
+    counted = [part for part in breakdown if part.counted]
+    total_weight = sum(part.weight for part in counted)
     overall = (
-        sum(part.weight * part.displayed_mastery for part in breakdown) / total_weight
+        sum(part.weight * part.displayed_mastery for part in counted) / total_weight
         if total_weight
         else 0.0
     )

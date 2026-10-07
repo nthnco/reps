@@ -142,6 +142,10 @@ export type PatternMasteryRead = {
      */
     problem_count: number;
     /**
+     * Problems Attempted
+     */
+    problems_attempted: number;
+    /**
      * Due Count
      */
     due_count: number;
@@ -253,6 +257,10 @@ export type RatingPartRead = {
      * Displayed Mastery
      */
     displayed_mastery: number;
+    /**
+     * Counted
+     */
+    counted: boolean;
 };
 
 /**

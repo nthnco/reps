@@ -54,6 +54,7 @@ def test_empty_mastery_has_a_row_per_pattern(client):
         "low_data": True,
         "attempt_count": 0,
         "problem_count": 0,
+        "problems_attempted": 0,
         "due_count": 0,
         "last_practiced_on": None,
         "median_solve_seconds": None,
@@ -115,7 +116,8 @@ def test_empty_summary(client):
     assert summary(client) == {
         "overall": 0.0,
         "breakdown": [
-            {"pattern": p.value, "weight": 1.0, "displayed_mastery": 0.0} for p in Pattern
+            {"pattern": p.value, "weight": 1.0, "displayed_mastery": 0.0, "counted": False}
+            for p in Pattern
         ],
         "strengths": [],
         "weaknesses": [],
@@ -125,9 +127,12 @@ def test_empty_summary(client):
 
 
 def test_summary_strengths_weaknesses_and_completed(client):
+    # Stack: two problems, five clean attempts today -> mastered, enough data, counted.
     stack = add_problem(client, "valid-parentheses", pattern="stack")
-    for _ in range(5):
-        log(client, stack)  # five clean attempts today: mastered, enough data
+    for _ in range(4):
+        log(client, stack)
+    log(client, add_problem(client, "min-stack", pattern="stack"))
+    # Heap: one failed problem -> a weakness, but too few problems to count.
     log(client, add_problem(client, "kth-largest", pattern="heap"), solved=False)
 
     result = summary(client)
@@ -135,5 +140,7 @@ def test_summary_strengths_weaknesses_and_completed(client):
     assert result["strengths"] == ["stack"]
     assert result["weaknesses"] == ["heap"]
     assert "stack" not in result["not_started"] and "heap" not in result["not_started"]
-    assert result["total_completed"] == 1
-    assert result["overall"] == pytest.approx(1.0 / len(Pattern))
+    assert result["total_completed"] == 2
+    assert result["overall"] == 1.0  # only stack counts
+    counted = [part["pattern"] for part in result["breakdown"] if part["counted"]]
+    assert counted == ["stack"]

@@ -481,6 +481,10 @@
             "type": "integer",
             "title": "Problem Count"
           },
+          "problems_attempted": {
+            "type": "integer",
+            "title": "Problems Attempted"
+          },
           "due_count": {
             "type": "integer",
             "title": "Due Count"
@@ -519,6 +523,7 @@
           "low_data",
           "attempt_count",
           "problem_count",
+          "problems_attempted",
           "due_count",
           "last_practiced_on",
           "median_solve_seconds"
@@ -682,13 +687,18 @@
           "displayed_mastery": {
             "type": "number",
             "title": "Displayed Mastery"
+          },
+          "counted": {
+            "type": "boolean",
+            "title": "Counted"
           }
         },
         "type": "object",
         "required": [
           "pattern",
           "weight",
-          "displayed_mastery"
+          "displayed_mastery",
+          "counted"
         ],
         "title": "RatingPartRead"
       },
