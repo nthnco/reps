@@ -96,3 +96,36 @@ class QueueItem(BaseModel):
     problem: ProblemRead
     due_on: date | None  # None: never attempted
 
+
+class PatternMasteryRead(BaseModel):
+    pattern: Pattern
+    displayed_mastery: float  # mastery after decay; what the bar shows
+    mastery: float  # raw EWMA, before decay
+    peak: float
+    certainty: float
+    low_data: bool  # certainty below the configured minimum
+    attempt_count: int
+    problem_count: int
+    due_count: int  # attempted problems due for review today or earlier
+    last_practiced_on: date | None
+    median_solve_seconds: int | None
+
+
+class RatingPartRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    pattern: Pattern
+    weight: float
+    displayed_mastery: float
+
+
+class ProfileSummaryRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    overall: float
+    breakdown: list[RatingPartRead]
+    strengths: list[Pattern]
+    weaknesses: list[Pattern]
+    not_started: list[Pattern]
+    total_completed: int
+

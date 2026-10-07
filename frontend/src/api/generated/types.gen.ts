@@ -109,6 +109,53 @@ export type Me = {
 export type Pattern = 'arrays_hashing' | 'two_pointers' | 'sliding_window' | 'stack' | 'binary_search' | 'linked_list' | 'trees' | 'tries' | 'heap' | 'backtracking' | 'graphs' | 'advanced_graphs' | 'dp_1d' | 'dp_2d' | 'greedy' | 'intervals' | 'math_geometry' | 'bit_manipulation';
 
 /**
+ * PatternMasteryRead
+ */
+export type PatternMasteryRead = {
+    pattern: Pattern;
+    /**
+     * Displayed Mastery
+     */
+    displayed_mastery: number;
+    /**
+     * Mastery
+     */
+    mastery: number;
+    /**
+     * Peak
+     */
+    peak: number;
+    /**
+     * Certainty
+     */
+    certainty: number;
+    /**
+     * Low Data
+     */
+    low_data: boolean;
+    /**
+     * Attempt Count
+     */
+    attempt_count: number;
+    /**
+     * Problem Count
+     */
+    problem_count: number;
+    /**
+     * Due Count
+     */
+    due_count: number;
+    /**
+     * Last Practiced On
+     */
+    last_practiced_on: string | null;
+    /**
+     * Median Solve Seconds
+     */
+    median_solve_seconds: number | null;
+};
+
+/**
  * ProblemCreate
  */
 export type ProblemCreate = {
@@ -153,6 +200,36 @@ export type ProblemRead = {
 };
 
 /**
+ * ProfileSummaryRead
+ */
+export type ProfileSummaryRead = {
+    /**
+     * Overall
+     */
+    overall: number;
+    /**
+     * Breakdown
+     */
+    breakdown: Array<RatingPartRead>;
+    /**
+     * Strengths
+     */
+    strengths: Array<Pattern>;
+    /**
+     * Weaknesses
+     */
+    weaknesses: Array<Pattern>;
+    /**
+     * Not Started
+     */
+    not_started: Array<Pattern>;
+    /**
+     * Total Completed
+     */
+    total_completed: number;
+};
+
+/**
  * QueueItem
  */
 export type QueueItem = {
@@ -161,6 +238,21 @@ export type QueueItem = {
      * Due On
      */
     due_on: string | null;
+};
+
+/**
+ * RatingPartRead
+ */
+export type RatingPartRead = {
+    pattern: Pattern;
+    /**
+     * Weight
+     */
+    weight: number;
+    /**
+     * Displayed Mastery
+     */
+    displayed_mastery: number;
 };
 
 /**
@@ -338,6 +430,40 @@ export type TodaysQueueApiQueueGetResponses = {
 };
 
 export type TodaysQueueApiQueueGetResponse = TodaysQueueApiQueueGetResponses[keyof TodaysQueueApiQueueGetResponses];
+
+export type GetPatternMasteryApiPatternsMasteryGetData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/patterns/mastery';
+};
+
+export type GetPatternMasteryApiPatternsMasteryGetResponses = {
+    /**
+     * Response Get Pattern Mastery Api Patterns Mastery Get
+     *
+     * Successful Response
+     */
+    200: Array<PatternMasteryRead>;
+};
+
+export type GetPatternMasteryApiPatternsMasteryGetResponse = GetPatternMasteryApiPatternsMasteryGetResponses[keyof GetPatternMasteryApiPatternsMasteryGetResponses];
+
+export type GetProfileSummaryApiProfileSummaryGetData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/profile/summary';
+};
+
+export type GetProfileSummaryApiProfileSummaryGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: ProfileSummaryRead;
+};
+
+export type GetProfileSummaryApiProfileSummaryGetResponse = GetProfileSummaryApiProfileSummaryGetResponses[keyof GetProfileSummaryApiProfileSummaryGetResponses];
 
 export type HealthApiHealthGetData = {
     body?: never;
