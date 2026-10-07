@@ -404,6 +404,30 @@
         ],
         "title": "LoginBody"
       },
+      "MasteryRulesRead": {
+        "properties": {
+          "overall_min_problems": {
+            "type": "integer",
+            "title": "Overall Min Problems"
+          },
+          "mastered_at": {
+            "type": "number",
+            "title": "Mastered At"
+          },
+          "strength_min_attempts": {
+            "type": "integer",
+            "title": "Strength Min Attempts"
+          }
+        },
+        "type": "object",
+        "required": [
+          "overall_min_problems",
+          "mastered_at",
+          "strength_min_attempts"
+        ],
+        "title": "MasteryRulesRead",
+        "description": "The thresholds from mastery_config, so the UI can state them exactly."
+      },
       "Me": {
         "properties": {
           "username": {
@@ -485,6 +509,14 @@
             "type": "integer",
             "title": "Problems Attempted"
           },
+          "problems_until_counted": {
+            "type": "integer",
+            "title": "Problems Until Counted"
+          },
+          "attempts_until_trusted": {
+            "type": "integer",
+            "title": "Attempts Until Trusted"
+          },
           "due_count": {
             "type": "integer",
             "title": "Due Count"
@@ -524,6 +556,8 @@
           "attempt_count",
           "problem_count",
           "problems_attempted",
+          "problems_until_counted",
+          "attempts_until_trusted",
           "due_count",
           "last_practiced_on",
           "median_solve_seconds"
@@ -602,6 +636,9 @@
       },
       "ProfileSummaryRead": {
         "properties": {
+          "rules": {
+            "$ref": "#/components/schemas/MasteryRulesRead"
+          },
           "overall": {
             "type": "number",
             "title": "Overall"
@@ -627,6 +664,13 @@
             "type": "array",
             "title": "Weaknesses"
           },
+          "needs_review": {
+            "items": {
+              "$ref": "#/components/schemas/Pattern"
+            },
+            "type": "array",
+            "title": "Needs Review"
+          },
           "not_started": {
             "items": {
               "$ref": "#/components/schemas/Pattern"
@@ -641,10 +685,12 @@
         },
         "type": "object",
         "required": [
+          "rules",
           "overall",
           "breakdown",
           "strengths",
           "weaknesses",
+          "needs_review",
           "not_started",
           "total_completed"
         ],

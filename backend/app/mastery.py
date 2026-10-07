@@ -68,7 +68,10 @@ class ProfileSummary:
     overall: float  # weighted mean of displayed mastery over counted patterns; 0 if none
     breakdown: tuple[RatingPart, ...]
     strengths: tuple[Pattern, ...]
-    weaknesses: tuple[Pattern, ...]  # weakest attempted patterns below MASTERED_AT
+    # Both below MASTERED_AT as displayed. A weakness is below it before decay
+    # too (a skill gap); needs_review was mastered and has faded since.
+    weaknesses: tuple[Pattern, ...]
+    needs_review: tuple[Pattern, ...]
     not_started: tuple[Pattern, ...]
     total_completed: int  # distinct problems solved at least once
 
@@ -127,6 +130,14 @@ def record(state: MasteryState, score: float, floor: float) -> MasteryState:
 
 def certainty(n: int) -> float:
     return n / (n + cfg.CERTAINTY_K)
+
+
+def attempts_to_trust() -> int:
+    """Fewest attempts whose certainty reaches MIN_CERTAINTY (which must be below 1)."""
+    n = 0
+    while certainty(n) < cfg.MIN_CERTAINTY:
+        n += 1
+    return n
 
 
 def _latest_solved(attempts: Iterable[AttemptLike]) -> AttemptLike | None:
@@ -221,17 +232,20 @@ def profile_summary(
         if row.certainty >= cfg.MIN_CERTAINTY
         and displayed[row.pattern] >= cfg.MASTERED_AT
     )[: cfg.SUMMARY_TOP_N]
-    weaknesses = tuple(
-        row.pattern
+    below = [
+        row
         for row in sorted(attempted, key=lambda r: displayed[r.pattern])
         if displayed[row.pattern] < cfg.MASTERED_AT
-    )[: cfg.SUMMARY_TOP_N]
+    ]
+    weaknesses = tuple(r.pattern for r in below if r.mastery < cfg.MASTERED_AT)
+    needs_review = tuple(r.pattern for r in below if r.mastery >= cfg.MASTERED_AT)
 
     return ProfileSummary(
         overall=overall,
         breakdown=breakdown,
         strengths=strengths,
-        weaknesses=weaknesses,
+        weaknesses=weaknesses[: cfg.SUMMARY_TOP_N],
+        needs_review=needs_review[: cfg.SUMMARY_TOP_N],
         not_started=tuple(row.pattern for row in rows if row.attempt_count == 0),
         total_completed=completed,
     )

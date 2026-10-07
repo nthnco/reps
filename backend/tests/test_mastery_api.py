@@ -56,6 +56,8 @@ def test_empty_mastery_has_a_row_per_pattern(client):
         "attempt_count": 0,
         "problem_count": 0,
         "problems_attempted": 0,
+        "problems_until_counted": 2,
+        "attempts_until_trusted": 5,
         "due_count": 0,
         "last_practiced_on": None,
         "median_solve_seconds": None,
@@ -115,6 +117,7 @@ def test_five_attempts_clear_low_data(client):
 
 def test_empty_summary(client):
     assert summary(client) == {
+        "rules": {"overall_min_problems": 2, "mastered_at": 0.6, "strength_min_attempts": 5},
         "overall": 0.0,
         "breakdown": [
             {"pattern": p.value, "weight": 1.0, "displayed_mastery": 0.0, "counted": False}
@@ -122,6 +125,7 @@ def test_empty_summary(client):
         ],
         "strengths": [],
         "weaknesses": [],
+        "needs_review": [],
         "not_started": [p.value for p in Pattern],
         "total_completed": 0,
     }
@@ -145,3 +149,30 @@ def test_summary_strengths_weaknesses_and_completed(client):
     assert result["overall"] == 1.0  # only stack counts
     counted = [part["pattern"] for part in result["breakdown"] if part["counted"]]
     assert counted == ["stack"]
+
+
+def test_progress_counts_down_and_stops_at_zero(client):
+    first = add_problem(client, "valid-parentheses")
+    log(client, first)
+    log(client, first)
+
+    row = mastery_row(client, "stack")
+    assert (row["problems_until_counted"], row["attempts_until_trusted"]) == (1, 3)
+
+    log(client, add_problem(client, "min-stack"))
+    for _ in range(4):
+        log(client, first)
+
+    row = mastery_row(client, "stack")
+    assert (row["problems_until_counted"], row["attempts_until_trusted"]) == (0, 0)
+
+
+def test_long_untouched_mastered_pattern_needs_review(client):
+    first = add_problem(client, "valid-parentheses")
+    log(client, first, days_ago=400)
+    log(client, add_problem(client, "min-stack"), days_ago=400)
+
+    result = summary(client)
+
+    assert result["needs_review"] == ["stack"]
+    assert result["weaknesses"] == []

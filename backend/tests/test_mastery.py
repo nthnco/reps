@@ -1,4 +1,4 @@
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from datetime import date, timedelta
 from itertools import count
 
@@ -8,6 +8,7 @@ from app import mastery_config as cfg
 from app.mastery import (
     MasteryState,
     attempt_score,
+    attempts_to_trust,
     certainty,
     displayed_mastery,
     ewma,
@@ -89,9 +90,10 @@ def test_a_clean_easy_is_below_mastered():
 
 
 def test_ewma_weights_the_new_score_by_alpha():
-    assert ewma(old=1.0, new=0.0) == pytest.approx(0.3)
-    assert ewma(old=0.0, new=1.0) == pytest.approx(0.7)
-    assert ewma(old=0.6, new=1.0) == pytest.approx(0.88)
+    assert ewma(old=1.0, new=0.0, alpha=0.7) == pytest.approx(0.3)
+    assert ewma(old=0.0, new=1.0, alpha=0.7) == pytest.approx(0.7)
+    assert ewma(old=0.6, new=1.0, alpha=0.5) == pytest.approx(0.8)
+    assert ewma(old=0.6, new=1.0) == ewma(old=0.6, new=1.0, alpha=cfg.EWMA_ALPHA)
 
 
 def test_first_attempt_sets_mastery_outright():
@@ -104,8 +106,8 @@ def test_record_folds_scores_in_order():
     state = MasteryState()
     for score in (1.0, 0.0, 0.6):
         state = record(state, score, floor=0.0)
-    # 1.0 -> 0.3 -> 0.7 * 0.6 + 0.3 * 0.3 = 0.51
-    assert state.mastery == pytest.approx(0.51)
+    # 1.0 -> 0.5 -> 0.5 * 0.6 + 0.5 * 0.5 = 0.55
+    assert state.mastery == pytest.approx(0.55)
     assert state.attempt_count == 3
 
 
@@ -114,21 +116,21 @@ def test_a_clean_solve_never_lowers_mastery():
 
     warm_up = record(mastered, 0.5, floor=1.0)  # clean easy
 
-    assert warm_up.mastery == 0.9  # not 0.7 * 0.5 + 0.3 * 0.9 = 0.62
+    assert warm_up.mastery == 0.9  # not 0.5 * 0.5 + 0.5 * 0.9 = 0.7
     assert warm_up.attempt_count == 6
 
 
 def test_a_clean_solve_still_raises_mastery():
     low = MasteryState(mastery=0.3, peak=0.9, attempt_count=5)
 
-    assert record(low, 0.5, floor=1.0).mastery == pytest.approx(0.44)
+    assert record(low, 0.5, floor=1.0).mastery == pytest.approx(0.4)
 
 
 def test_a_non_clean_solve_can_still_lower_mastery():
     mastered = MasteryState(mastery=0.9, peak=0.9, attempt_count=5)
 
-    assert record(mastered, 0.54, floor=0.0).mastery == pytest.approx(0.648)
-    assert record(mastered, 0.0, floor=0.0).mastery == pytest.approx(0.27)
+    assert record(mastered, 0.54, floor=0.0).mastery == pytest.approx(0.72)
+    assert record(mastered, 0.0, floor=0.0).mastery == pytest.approx(0.45)
 
 
 @pytest.mark.parametrize(
@@ -149,9 +151,9 @@ def test_stretch_floor_holds_mastery_at_the_clean_medium_level():
     above = MasteryState(mastery=0.95, peak=0.95, attempt_count=5)
     below = MasteryState(mastery=0.5, peak=0.9, attempt_count=5)
 
-    assert record(at_medium, 0.6, floor=0.9).mastery == 0.9  # not 0.72
+    assert record(at_medium, 0.6, floor=0.9).mastery == 0.9  # not 0.75
     assert record(above, 0.6, floor=0.9).mastery == 0.9  # can drop, but only to 0.9
-    assert record(below, 0.6, floor=0.9).mastery == pytest.approx(0.57)  # normal rise
+    assert record(below, 0.6, floor=0.9).mastery == pytest.approx(0.55)  # normal rise
 
 
 def test_a_hard_with_a_hint_keeps_a_medium_mastered_pattern():
@@ -170,9 +172,9 @@ def test_peak_never_decreases():
         assert state.peak >= state.mastery
 
     assert peaks == sorted(peaks)
-    # Mastery peaks at 0.964 after the third score, then falls to 0.25; peak stays.
-    assert state.peak == pytest.approx(0.964)
-    assert state.mastery == pytest.approx(0.25014252)
+    # Mastery peaks at 0.9 after the third score, then falls to 0.353; peak stays.
+    assert state.peak == pytest.approx(0.9)
+    assert state.mastery == pytest.approx(0.353125)
 
 
 # --- certainty ---
@@ -181,6 +183,12 @@ def test_peak_never_decreases():
 @pytest.mark.parametrize(("n", "expected"), [(0, 0.0), (1, 1 / 6), (5, 0.5), (30, 30 / 35)])
 def test_certainty(n, expected):
     assert certainty(n) == pytest.approx(expected)
+
+
+def test_attempts_to_trust_matches_the_certainty_threshold():
+    n = attempts_to_trust()
+    assert n == 5
+    assert certainty(n) >= cfg.MIN_CERTAINTY > certainty(n - 1)
 
 
 # --- decay ---
@@ -241,13 +249,13 @@ def test_every_pattern_gets_a_row_in_order():
 
 def test_attempts_across_a_patterns_problems_are_replayed_by_date():
     # Logged out of order (the fail was backdated), but replayed by date:
-    # clean on day 0, fail on day 1, clean on day 2 -> 1.0, 0.3, 0.79.
+    # clean on day 0, fail on day 1, clean on day 2 -> 1.0, 0.5, 0.75.
     a = FakeProblem(attempts=[FakeAttempt(DAY0), FakeAttempt(DAY0 + timedelta(2))])
     b = FakeProblem(attempts=[FakeAttempt(DAY0 + timedelta(1), solved=False)])
 
     row = row_for(Pattern.STACK, [a, b])
 
-    assert row.mastery == pytest.approx(0.79)
+    assert row.mastery == pytest.approx(0.75)
     assert row.peak == 1.0
     assert row.attempt_count == 3
     assert row.certainty == pytest.approx(3 / 8)
@@ -256,7 +264,7 @@ def test_attempts_across_a_patterns_problems_are_replayed_by_date():
 
 def test_same_day_attempts_replay_in_logged_order():
     problem = FakeProblem(attempts=[FakeAttempt(solved=False), FakeAttempt()])
-    assert row_for(Pattern.STACK, [problem]).mastery == pytest.approx(0.7)
+    assert row_for(Pattern.STACK, [problem]).mastery == pytest.approx(0.5)
 
 
 def test_difficulty_comes_from_the_problem():
@@ -330,15 +338,27 @@ def test_total_completed_counts_problems_solved_at_least_once():
 # --- profile summary ---
 
 
-def summary_from(problems_by_pattern: dict[Pattern, int], displayed: dict[Pattern, float]):
-    """n distinct problems per pattern, one clean attempt each; `displayed` overrides decay."""
+def summary_from(
+    problems_by_pattern: dict[Pattern, int],
+    displayed: dict[Pattern, float],
+    faded: frozenset[Pattern] = frozenset(),
+):
+    """n distinct problems per pattern, one clean attempt each, shown at `displayed`.
+
+    Raw mastery equals displayed (no decay), except for `faded` patterns, which
+    keep the raw 1.0 from their clean solves: mastered once, decayed since.
+    """
     problems = [
         FakeProblem(pattern, attempts=[FakeAttempt()])
         for pattern, n in problems_by_pattern.items()
         for _ in range(n)
     ]
     shown = {p: displayed.get(p, 0.0) for p in Pattern}
-    return profile_summary(pattern_mastery(problems), shown, total_completed(problems))
+    rows = [
+        row if row.pattern in faded else replace(row, mastery=shown[row.pattern])
+        for row in pattern_mastery(problems)
+    ]
+    return profile_summary(rows, shown, total_completed(problems))
 
 
 def test_summary_with_no_attempts():
@@ -418,3 +438,21 @@ def test_weaknesses_only_include_attempted_patterns():
     summary = summary_from({Pattern.STACK: 1}, {Pattern.STACK: 0.2})
 
     assert summary.weaknesses == (Pattern.STACK,)
+
+
+def test_faded_patterns_need_review_not_work():
+    summary = summary_from(
+        {Pattern.STACK: 2, Pattern.HEAP: 2, Pattern.TRIES: 2},
+        {Pattern.STACK: 0.3, Pattern.HEAP: 0.2, Pattern.TRIES: 0.4},
+        faded=frozenset({Pattern.STACK, Pattern.TRIES}),
+    )
+
+    # Heap was never mastered: a skill gap. Stack and Tries were, then decayed.
+    assert summary.weaknesses == (Pattern.HEAP,)
+    assert summary.needs_review == (Pattern.STACK, Pattern.TRIES)
+
+
+def test_faded_but_still_mastered_needs_nothing():
+    summary = summary_from({Pattern.STACK: 2}, {Pattern.STACK: 0.7}, faded=frozenset({Pattern.STACK}))
+
+    assert summary.weaknesses == summary.needs_review == ()

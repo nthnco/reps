@@ -6,6 +6,7 @@ importing those two from fsrs instead.
 """
 
 from collections import Counter
+from dataclasses import asdict
 from datetime import date
 from typing import Annotated
 
@@ -18,13 +19,14 @@ from app.clock import local_today
 from app.db import get_db
 from app.mastery import (
     PatternMastery,
+    attempts_to_trust,
     displayed_mastery,
     pattern_mastery,
     profile_summary,
     total_completed,
 )
 from app.models import Pattern, Problem
-from app.schemas import PatternMasteryRead, ProfileSummaryRead
+from app.schemas import MasteryRulesRead, PatternMasteryRead, ProfileSummaryRead
 from app.sm2 import ReviewState, retention, schedule
 
 router = APIRouter(prefix="/api", tags=["mastery"])
@@ -75,6 +77,8 @@ def get_pattern_mastery(db: Annotated[Session, Depends(get_db)]) -> list[Pattern
             attempt_count=row.attempt_count,
             problem_count=problem_counts[row.pattern],
             problems_attempted=row.problems_attempted,
+            problems_until_counted=max(0, cfg.OVERALL_MIN_PROBLEMS - row.problems_attempted),
+            attempts_until_trusted=max(0, attempts_to_trust() - row.attempt_count),
             due_count=sum(1 for s in states[row.pattern] if s.due_on <= today),
             last_practiced_on=row.last_practiced_on,
             median_solve_seconds=row.median_solve_seconds,
@@ -90,4 +94,10 @@ def get_profile_summary(db: Annotated[Session, Depends(get_db)]) -> ProfileSumma
     rows = pattern_mastery(problems)  # pyright: ignore[reportArgumentType]
     displayed = _displayed(rows, _states_by_pattern(problems), today)
     completed = total_completed(problems)  # pyright: ignore[reportArgumentType]
-    return ProfileSummaryRead.model_validate(profile_summary(rows, displayed, completed))
+    summary = profile_summary(rows, displayed, completed)
+    rules = MasteryRulesRead(
+        overall_min_problems=cfg.OVERALL_MIN_PROBLEMS,
+        mastered_at=cfg.MASTERED_AT,
+        strength_min_attempts=attempts_to_trust(),
+    )
+    return ProfileSummaryRead(rules=rules, **asdict(summary))

@@ -94,6 +94,26 @@ export type LoginBody = {
 };
 
 /**
+ * MasteryRulesRead
+ *
+ * The thresholds from mastery_config, so the UI can state them exactly.
+ */
+export type MasteryRulesRead = {
+    /**
+     * Overall Min Problems
+     */
+    overall_min_problems: number;
+    /**
+     * Mastered At
+     */
+    mastered_at: number;
+    /**
+     * Strength Min Attempts
+     */
+    strength_min_attempts: number;
+};
+
+/**
  * Me
  */
 export type Me = {
@@ -145,6 +165,14 @@ export type PatternMasteryRead = {
      * Problems Attempted
      */
     problems_attempted: number;
+    /**
+     * Problems Until Counted
+     */
+    problems_until_counted: number;
+    /**
+     * Attempts Until Trusted
+     */
+    attempts_until_trusted: number;
     /**
      * Due Count
      */
@@ -207,6 +235,7 @@ export type ProblemRead = {
  * ProfileSummaryRead
  */
 export type ProfileSummaryRead = {
+    rules: MasteryRulesRead;
     /**
      * Overall
      */
@@ -223,6 +252,10 @@ export type ProfileSummaryRead = {
      * Weaknesses
      */
     weaknesses: Array<Pattern>;
+    /**
+     * Needs Review
+     */
+    needs_review: Array<Pattern>;
     /**
      * Not Started
      */

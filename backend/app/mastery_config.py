@@ -3,8 +3,9 @@
 from app.models import Difficulty, Pattern
 
 # Mastery is an EWMA of attempt scores: ALPHA * new + (1 - ALPHA) * old.
-# 0.7 is very reactive: one failure takes 1.0 down to 0.3.
-EWMA_ALPHA = 0.7
+# 0.5: the latest attempt counts for half, so one failure takes 0.9 to 0.45,
+# and two in a row to about 0.22.
+EWMA_ALPHA = 0.5
 
 # Score for a clean solve (no hint, within the time limit), by difficulty.
 # Easy stays below MASTERED_AT, so easies alone never make a pattern mastered.
