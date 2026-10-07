@@ -44,12 +44,21 @@ queue shows what's due
   `src/api/queries.ts`.
 - **Workflow**: one branch per leaf with a PR to `main`. The user merges it by
   hand after CI passes; nothing merges automatically.
+- **Hosting**: app on Render (free web service, Docker, `render.yaml`,
+  deploys from `main` only after CI passes); Postgres on Neon (free plan, no
+  expiry). Render's free Postgres was rejected because it expires after 30
+  days. FastAPI serves the built frontend, so it's one origin with no CORS.
+  Free Render services sleep after 15 minutes idle (~1 min cold start);
+  upgrade the demo service once its link is shared.
+- **Deploy plan**: (1) deploy plumbing, (2) password gate, then the private
+  instance goes live, (3) demo mode: a second instance with writes blocked
+  and seeded data dated relative to today, re-seeded daily.
 
 ## Open decisions
 
-- **Single-user vs accounts**: assumed single-user for now (no auth).
-- **Hosting**: undecided. Local-only for the MVP. Needs managed Postgres
-  wherever it lands.
+- **Single-user vs accounts**: single-user for now. The private instance and
+  the demo are separate deployments with separate databases.
+- **Backups**: Neon's free plan keeps only 6 hours of restore history.
 
 ## Notes and follow-ups
 
