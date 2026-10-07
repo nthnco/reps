@@ -11,6 +11,8 @@ from app.mastery import (
     certainty,
     displayed_mastery,
     ewma,
+    drop_floor,
+    is_clean,
     pattern_mastery,
     profile_summary,
     record,
@@ -35,7 +37,8 @@ class FakeAttempt:
 @dataclass
 class FakeProblem:
     pattern: Pattern = Pattern.STACK
-    difficulty: Difficulty = Difficulty.MEDIUM
+    # Hard, so a clean solve scores exactly 1.0 and the replay math stays simple.
+    difficulty: Difficulty = Difficulty.HARD
     attempts: list[FakeAttempt] = field(default_factory=list)
 
 
@@ -49,28 +52,37 @@ MEDIUM_LIMIT = cfg.SLOW_AFTER_SECONDS[Difficulty.MEDIUM]
 
 
 @pytest.mark.parametrize(
-    ("solved", "used_hint", "seconds", "expected"),
+    ("solved", "used_hint", "seconds", "expected", "clean"),
     [
-        (True, False, 600, 1.0),
-        (True, False, 0, 1.0),  # no time recorded counts as fast
-        (True, False, MEDIUM_LIMIT, 1.0),  # exactly at the limit is on time
-        (True, False, MEDIUM_LIMIT + 1, 0.6),
-        (True, True, 600, 0.6),
-        (True, True, MEDIUM_LIMIT + 1, 0.6),  # hint and slow don't stack
-        (False, False, 600, 0.0),
-        (False, True, MEDIUM_LIMIT + 1, 0.0),
+        (True, False, 600, 0.9, True),
+        (True, False, 0, 0.9, True),  # no time recorded counts as fast
+        (True, False, MEDIUM_LIMIT, 0.9, True),  # exactly at the limit is on time
+        (True, False, MEDIUM_LIMIT + 1, 0.54, False),
+        (True, True, 600, 0.54, False),
+        (True, True, MEDIUM_LIMIT + 1, 0.54, False),  # hint and slow don't stack
+        (False, False, 600, 0.0, False),
+        (False, True, MEDIUM_LIMIT + 1, 0.0, False),
     ],
 )
-def test_attempt_score(solved, used_hint, seconds, expected):
-    assert attempt_score(solved, used_hint, seconds, Difficulty.MEDIUM) == expected
+def test_attempt_score_for_a_medium(solved, used_hint, seconds, expected, clean):
+    facts = (solved, used_hint, seconds, Difficulty.MEDIUM)
+    assert attempt_score(*facts) == pytest.approx(expected)
+    assert is_clean(*facts) is clean
 
 
 @pytest.mark.parametrize(
-    ("difficulty", "minutes"), [(Difficulty.EASY, 15), (Difficulty.MEDIUM, 25), (Difficulty.HARD, 35)]
+    ("difficulty", "minutes", "clean_score"),
+    [(Difficulty.EASY, 15, 0.5), (Difficulty.MEDIUM, 25, 0.9), (Difficulty.HARD, 35, 1.0)],
 )
-def test_slow_limit_depends_on_difficulty(difficulty, minutes):
-    assert attempt_score(True, False, minutes * 60, difficulty) == 1.0
-    assert attempt_score(True, False, minutes * 60 + 1, difficulty) == 0.6
+def test_score_and_slow_limit_depend_on_difficulty(difficulty, minutes, clean_score):
+    assert attempt_score(True, False, minutes * 60, difficulty) == clean_score
+    assert attempt_score(True, False, minutes * 60 + 1, difficulty) == pytest.approx(
+        clean_score * 0.6
+    )
+
+
+def test_a_clean_easy_is_below_mastered():
+    assert cfg.SCORE_CLEAN[Difficulty.EASY] < cfg.MASTERED_AT
 
 
 # --- EWMA and peak ---
@@ -83,24 +95,77 @@ def test_ewma_weights_the_new_score_by_alpha():
 
 
 def test_first_attempt_sets_mastery_outright():
-    assert record(MasteryState(), 1.0).mastery == 1.0
-    assert record(MasteryState(), 0.6).mastery == 0.6
+    assert record(MasteryState(), 1.0, floor=1.0).mastery == 1.0
+    assert record(MasteryState(), 0.5, floor=1.0).mastery == 0.5  # even a low clean easy
+    assert record(MasteryState(), 0.6, floor=0.0).mastery == 0.6
 
 
 def test_record_folds_scores_in_order():
     state = MasteryState()
     for score in (1.0, 0.0, 0.6):
-        state = record(state, score)
+        state = record(state, score, floor=0.0)
     # 1.0 -> 0.3 -> 0.7 * 0.6 + 0.3 * 0.3 = 0.51
     assert state.mastery == pytest.approx(0.51)
     assert state.attempt_count == 3
+
+
+def test_a_clean_solve_never_lowers_mastery():
+    mastered = MasteryState(mastery=0.9, peak=0.9, attempt_count=5)
+
+    warm_up = record(mastered, 0.5, floor=1.0)  # clean easy
+
+    assert warm_up.mastery == 0.9  # not 0.7 * 0.5 + 0.3 * 0.9 = 0.62
+    assert warm_up.attempt_count == 6
+
+
+def test_a_clean_solve_still_raises_mastery():
+    low = MasteryState(mastery=0.3, peak=0.9, attempt_count=5)
+
+    assert record(low, 0.5, floor=1.0).mastery == pytest.approx(0.44)
+
+
+def test_a_non_clean_solve_can_still_lower_mastery():
+    mastered = MasteryState(mastery=0.9, peak=0.9, attempt_count=5)
+
+    assert record(mastered, 0.54, floor=0.0).mastery == pytest.approx(0.648)
+    assert record(mastered, 0.0, floor=0.0).mastery == pytest.approx(0.27)
+
+
+@pytest.mark.parametrize(
+    ("solved", "used_hint", "difficulty", "expected"),
+    [
+        (True, False, Difficulty.EASY, 1.0),  # clean: never lowers
+        (True, True, Difficulty.HARD, 0.9),  # stretching on a hard
+        (True, True, Difficulty.MEDIUM, 0.0),  # hint on a medium: normal average
+        (False, False, Difficulty.HARD, 0.0),  # a failed hard is still a failure
+    ],
+)
+def test_drop_floor(solved, used_hint, difficulty, expected):
+    assert drop_floor(solved, used_hint, 600, difficulty) == expected
+
+
+def test_stretch_floor_holds_mastery_at_the_clean_medium_level():
+    at_medium = MasteryState(mastery=0.9, peak=0.9, attempt_count=5)
+    above = MasteryState(mastery=0.95, peak=0.95, attempt_count=5)
+    below = MasteryState(mastery=0.5, peak=0.9, attempt_count=5)
+
+    assert record(at_medium, 0.6, floor=0.9).mastery == 0.9  # not 0.72
+    assert record(above, 0.6, floor=0.9).mastery == 0.9  # can drop, but only to 0.9
+    assert record(below, 0.6, floor=0.9).mastery == pytest.approx(0.57)  # normal rise
+
+
+def test_a_hard_with_a_hint_keeps_a_medium_mastered_pattern():
+    medium = FakeProblem(difficulty=Difficulty.MEDIUM, attempts=[FakeAttempt(DAY0)])
+    hard = FakeProblem(attempts=[FakeAttempt(DAY0 + timedelta(1), used_hint=True)])
+
+    assert row_for(Pattern.STACK, [medium, hard]).mastery == 0.9
 
 
 def test_peak_never_decreases():
     scores = [0.6, 1.0, 1.0, 0.0, 0.0, 0.6, 1.0, 0.0]
     state, peaks = MasteryState(), []
     for score in scores:
-        state = record(state, score)
+        state = record(state, score, floor=0.0)
         peaks.append(state.peak)
         assert state.peak >= state.mastery
 
@@ -195,12 +260,28 @@ def test_same_day_attempts_replay_in_logged_order():
 
 
 def test_difficulty_comes_from_the_problem():
-    # 20 minutes is on time for a medium, slow for an easy.
+    # 20 minutes is on time for a medium (0.9), slow for an easy (0.5 * 0.6).
     easy = FakeProblem(Pattern.HEAP, Difficulty.EASY, [FakeAttempt(duration_seconds=1200)])
     medium = FakeProblem(Pattern.TRIES, Difficulty.MEDIUM, [FakeAttempt(duration_seconds=1200)])
 
-    assert row_for(Pattern.HEAP, [easy]).mastery == 0.6
-    assert row_for(Pattern.TRIES, [medium]).mastery == 1.0
+    assert row_for(Pattern.HEAP, [easy]).mastery == pytest.approx(0.3)
+    assert row_for(Pattern.TRIES, [medium]).mastery == 0.9
+
+
+def test_only_easies_never_reach_mastered():
+    easies = [
+        FakeProblem(difficulty=Difficulty.EASY, attempts=[FakeAttempt(DAY0 + timedelta(i))])
+        for i in range(20)
+    ]
+
+    assert row_for(Pattern.STACK, easies).mastery < cfg.MASTERED_AT
+
+
+def test_a_warm_up_easy_keeps_a_pattern_mastered():
+    medium = FakeProblem(difficulty=Difficulty.MEDIUM, attempts=[FakeAttempt(DAY0)])
+    easy = FakeProblem(difficulty=Difficulty.EASY, attempts=[FakeAttempt(DAY0 + timedelta(1))])
+
+    assert row_for(Pattern.STACK, [medium, easy]).mastery == 0.9
 
 
 def test_median_solve_time_uses_each_problems_latest_solve():

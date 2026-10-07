@@ -73,23 +73,55 @@ class ProfileSummary:
     total_completed: int  # distinct problems solved at least once
 
 
+def is_clean(
+    solved: bool, used_hint: bool, duration_seconds: int, difficulty: Difficulty
+) -> bool:
+    return (
+        solved
+        and not used_hint
+        and duration_seconds <= cfg.SLOW_AFTER_SECONDS[difficulty]
+    )
+
+
 def attempt_score(
     solved: bool, used_hint: bool, duration_seconds: int, difficulty: Difficulty
 ) -> float:
     if not solved:
         return cfg.SCORE_FAILED
-    if used_hint or duration_seconds > cfg.SLOW_AFTER_SECONDS[difficulty]:
-        return cfg.SCORE_HINT_OR_SLOW
-    return cfg.SCORE_CLEAN
+    clean = cfg.SCORE_CLEAN[difficulty]
+    if is_clean(solved, used_hint, duration_seconds, difficulty):
+        return clean
+    return clean * cfg.HINT_OR_SLOW_FACTOR
+
+
+def drop_floor(
+    solved: bool, used_hint: bool, duration_seconds: int, difficulty: Difficulty
+) -> float:
+    """How far this attempt may pull mastery down: not below min(current, this).
+
+    1.0 for a clean solve, which never lowers mastery (a clean easy after
+    mastered mediums shows nothing wrong, though it scores below the average).
+    """
+    if is_clean(solved, used_hint, duration_seconds, difficulty):
+        return 1.0
+    if solved:
+        return cfg.STRETCH_FLOOR.get(difficulty, 0.0)
+    return 0.0
 
 
 def ewma(old: float, new: float, alpha: float = cfg.EWMA_ALPHA) -> float:
     return alpha * new + (1 - alpha) * old
 
 
-def record(state: MasteryState, score: float) -> MasteryState:
-    """Fold one attempt score into the state. The first attempt sets mastery outright."""
-    mastery = score if state.attempt_count == 0 else ewma(state.mastery, score)
+def record(state: MasteryState, score: float, floor: float) -> MasteryState:
+    """Fold one attempt score into the state. The first attempt sets mastery outright.
+
+    Mastery won't drop below min(current mastery, floor); see drop_floor.
+    """
+    if state.attempt_count == 0:
+        mastery = score
+    else:
+        mastery = max(ewma(state.mastery, score), min(state.mastery, floor))
     return MasteryState(mastery, max(state.peak, mastery), state.attempt_count + 1)
 
 
@@ -120,8 +152,8 @@ def pattern_mastery(problems: Iterable[ProblemLike]) -> list[PatternMastery]:
         )
         state = MasteryState()
         for a, difficulty in timeline:
-            score = attempt_score(a.solved, a.used_hint, a.duration_seconds, difficulty)
-            state = record(state, score)
+            facts = (a.solved, a.used_hint, a.duration_seconds, difficulty)
+            state = record(state, attempt_score(*facts), floor=drop_floor(*facts))
 
         solve_times = [
             a.duration_seconds for p in group if (a := _latest_solved(p.attempts))

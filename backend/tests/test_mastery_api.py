@@ -10,7 +10,8 @@ from app.sm2 import MIN_DECAY_DAYS, RETENTION_AT_DUE
 CLEAN = {"solved": True, "duration_seconds": 600, "confidence": 4}
 
 
-def add_problem(client, slug: str, pattern: str = "stack", difficulty: str = "medium") -> int:
+# Hard by default, so a clean solve scores exactly 1.0.
+def add_problem(client, slug: str, pattern: str = "stack", difficulty: str = "hard") -> int:
     body = {
         "title": slug,
         "link": f"https://leetcode.com/problems/{slug}/",

@@ -6,9 +6,21 @@ from app.models import Difficulty, Pattern
 # 0.7 is very reactive: one failure takes 1.0 down to 0.3.
 EWMA_ALPHA = 0.7
 
-SCORE_CLEAN = 1.0  # solved, no hint, within the time limit
-SCORE_HINT_OR_SLOW = 0.6
+# Score for a clean solve (no hint, within the time limit), by difficulty.
+# Easy stays below MASTERED_AT, so easies alone never make a pattern mastered.
+SCORE_CLEAN = {
+    Difficulty.EASY: 0.5,
+    Difficulty.MEDIUM: 0.9,
+    Difficulty.HARD: 1.0,
+}
+HINT_OR_SLOW_FACTOR = 0.6  # a hint or slow solve scores this fraction of clean
 SCORE_FAILED = 0.0
+
+# Stretching shouldn't be punished: a hint or slow solve at these difficulties
+# never drops mastery below this level (a clean solve never drops it at all).
+STRETCH_FLOOR = {
+    Difficulty.HARD: SCORE_CLEAN[Difficulty.MEDIUM],
+}
 
 # Roughly what an interviewer allows per problem, with some leniency.
 # A solve longer than this (not equal) counts as slow.
