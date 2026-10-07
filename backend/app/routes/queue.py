@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session, selectinload
 from app.clock import local_today
 from app.db import get_db
 from app.models import Problem
-from app.scheduler import schedule
+from app.sm2 import schedule
 from app.schemas import ProblemRead, QueueItem
 
 router = APIRouter(prefix="/api/queue", tags=["queue"])
