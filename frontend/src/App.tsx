@@ -1,12 +1,24 @@
 import { useQueryClient } from '@tanstack/react-query'
 import { useEffect } from 'react'
+import { Link, Route, Routes } from 'react-router'
 import { logout } from './api/auth'
 import { setUnauthorizedHandler } from './api/errors'
 import { queryKeys, useMe } from './api/queries'
 import { AddProblemForm } from './components/AddProblemForm'
 import { LoginPage } from './components/LoginPage'
-import { LogAttemptForm } from './components/LogAttemptForm'
+import { ProblemList } from './components/ProblemList'
+import { ProblemPage } from './components/ProblemPage'
 import { TodaysQueue } from './components/TodaysQueue'
+
+function HomePage() {
+  return (
+    <>
+      <TodaysQueue />
+      <ProblemList />
+      <AddProblemForm />
+    </>
+  )
+}
 
 function App() {
   const queryClient = useQueryClient()
@@ -38,7 +50,9 @@ function App() {
   return (
     <main className="mx-auto max-w-3xl space-y-10 p-4">
       <header className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Reps</h1>
+        <h1 className="text-2xl font-bold">
+          <Link to="/">Reps</Link>
+        </h1>
         {/* Gate off (local dev): there's no username and nothing to log out of. */}
         {me.data.username && (
           <button type="button" onClick={handleLogout} className="text-sm underline">
@@ -46,9 +60,10 @@ function App() {
           </button>
         )}
       </header>
-      <TodaysQueue />
-      <LogAttemptForm />
-      <AddProblemForm />
+      <Routes>
+        <Route path="/" element={<HomePage />} />
+        <Route path="/problems/:id" element={<ProblemPage />} />
+      </Routes>
     </main>
   )
 }

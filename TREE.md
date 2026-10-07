@@ -42,6 +42,10 @@ queue shows what's due
   `openapi-typescript`, which doesn't support TypeScript 6.
 - **Frontend data fetching**: TanStack Query. Cache keys live in
   `src/api/queries.ts`.
+- **Routing**: React Router. `/` is home (queue, all problems, add form);
+  `/problems/:id` is a problem's page with the log-attempt form.
+- **Timer**: one at a time, locked to its problem even while paused, saved in
+  this browser's localStorage. "Start problem" starts it and opens LeetCode.
 - **Workflow**: one branch per leaf with a PR to `main`. The user merges it by
   hand after CI passes; nothing merges automatically.
 - **Hosting**: app on Render (free web service, Docker, `render.yaml`,

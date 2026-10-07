@@ -4,17 +4,21 @@
 export type TimerState = {
   bankedMs: number // time from finished stretches
   runningSince: number | null // start of the current stretch, or null if paused
+  problemId: number | null // the problem being timed; null only when idle
 }
 
-export const IDLE: TimerState = { bankedMs: 0, runningSince: null }
+export const IDLE: TimerState = { bankedMs: 0, runningSince: null, problemId: null }
 
-export function start(state: TimerState, now: number): TimerState {
-  return state.runningSince === null ? { ...state, runningSince: now } : state
+/** No-op if already running, or if the timer (even paused) belongs to another problem. */
+export function start(state: TimerState, now: number, problemId: number): TimerState {
+  if (state.runningSince !== null) return state
+  if (state.problemId !== null && state.problemId !== problemId) return state
+  return { ...state, runningSince: now, problemId }
 }
 
 export function pause(state: TimerState, now: number): TimerState {
   if (state.runningSince === null) return state
-  return { bankedMs: state.bankedMs + (now - state.runningSince), runningSince: null }
+  return { ...state, bankedMs: state.bankedMs + (now - state.runningSince), runningSince: null }
 }
 
 export function elapsedMs(state: TimerState, now: number): number {
@@ -25,11 +29,12 @@ export function elapsedMs(state: TimerState, now: number): number {
 
 export function isTimerState(value: unknown): value is TimerState {
   if (typeof value !== 'object' || value === null) return false
-  const { bankedMs, runningSince } = value as Record<string, unknown>
+  const { bankedMs, runningSince, problemId } = value as Record<string, unknown>
   return (
     typeof bankedMs === 'number' &&
     bankedMs >= 0 &&
-    (runningSince === null || typeof runningSince === 'number')
+    (runningSince === null || typeof runningSince === 'number') &&
+    (problemId === null || typeof problemId === 'number')
   )
 }
 

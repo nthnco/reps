@@ -39,12 +39,13 @@ export function useTimer() {
   }, [running])
 
   return {
+    problemId: state.problemId,
     running,
     elapsedMs: elapsedMs(state, now),
-    start: () => {
+    start: (problemId: number) => {
       const t = Date.now()
       setNow(t)
-      setState((s) => start(s, t))
+      setState((s) => start(s, t, problemId))
     },
     pause: () => {
       const t = Date.now()

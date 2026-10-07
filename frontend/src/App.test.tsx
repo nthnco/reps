@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, expect, test, vi } from 'vitest'
 import App from './App'
 import type { ProblemRead } from './api/generated'
-import { renderWithQueryClient } from './test/render'
+import { renderWithProviders } from './test/render'
 
 const TWO_SUM: ProblemRead = {
   id: 7,
@@ -66,25 +66,44 @@ afterEach(() => {
 })
 
 test('with the gate off, the app shows without a login or logout', async () => {
-  renderWithQueryClient(<App />)
+  renderWithProviders(<App />)
   expect(await screen.findByRole('heading', { name: "Today's queue" })).toBeInTheDocument()
   expect(screen.queryByRole('button', { name: 'Log out' })).not.toBeInTheDocument()
 })
 
 test('logging an attempt takes the problem off the queue', async () => {
   const user = userEvent.setup()
-  renderWithQueryClient(<App />)
+  renderWithProviders(<App />)
 
-  const queue = (await screen.findByRole('heading', { name: "Today's queue" })).closest('section')!
-  expect(await within(queue).findByRole('link', { name: 'Two Sum' })).toBeInTheDocument()
+  await screen.findByRole('heading', { name: "Today's queue" })
+  const queue = () => screen.getByRole('heading', { name: "Today's queue" }).closest('section')!
+  await user.click(await within(queue()).findByRole('link', { name: 'Two Sum' }))
 
-  await user.selectOptions(await screen.findByLabelText('Problem'), '7')
+  expect(await screen.findByRole('heading', { name: 'Two Sum' })).toBeInTheDocument()
   await user.type(screen.getByLabelText(/enter minutes/), '15')
   await user.click(screen.getByRole('radio', { name: 'Solved' }))
   await user.click(screen.getByRole('radio', { name: '4' }))
   await user.click(screen.getByRole('button', { name: 'Log attempt' }))
+  await screen.findByRole('status')
 
-  expect(await within(queue).findByText('Nothing due today.')).toBeInTheDocument()
+  await user.click(screen.getByRole('link', { name: '← All problems' }))
+  expect(await within(queue()).findByText('Nothing due today.')).toBeInTheDocument()
+})
+
+test('the problem page says so when the problem does not exist', async () => {
+  renderWithProviders(<App />, { route: '/problems/999' })
+
+  expect(await screen.findByText("That problem doesn't exist.")).toBeInTheDocument()
+})
+
+test('all problems link to their problem pages', async () => {
+  renderWithProviders(<App />)
+
+  const list = (await screen.findByRole('heading', { name: 'All problems' })).closest('section')!
+  expect(await within(list).findByRole('link', { name: 'Two Sum' })).toHaveAttribute(
+    'href',
+    '/problems/7',
+  )
 })
 
 async function logIn(password: string) {
@@ -97,7 +116,7 @@ async function logIn(password: string) {
 
 test('a wrong password stays on the login page', async () => {
   vi.stubGlobal('fetch', fakeBackend({ gated: true }).fetchMock)
-  renderWithQueryClient(<App />)
+  renderWithProviders(<App />)
 
   await logIn('nope')
 
@@ -107,7 +126,7 @@ test('a wrong password stays on the login page', async () => {
 
 test('logging in shows the app, logging out returns to the login page', async () => {
   vi.stubGlobal('fetch', fakeBackend({ gated: true }).fetchMock)
-  renderWithQueryClient(<App />)
+  renderWithProviders(<App />)
 
   const user = await logIn('pw')
   expect(await screen.findByRole('heading', { name: "Today's queue" })).toBeInTheDocument()
@@ -119,7 +138,7 @@ test('logging in shows the app, logging out returns to the login page', async ()
 test('a session that expires mid-use goes back to the login page', async () => {
   const backend = fakeBackend({ gated: true })
   vi.stubGlobal('fetch', backend.fetchMock)
-  const { queryClient } = renderWithQueryClient(<App />)
+  const { queryClient } = renderWithProviders(<App />)
   await logIn('pw')
   await screen.findByRole('heading', { name: "Today's queue" })
 
