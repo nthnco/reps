@@ -1,0 +1,16 @@
+# Render Blueprint: the app's hosting config. The database lives on Neon;
+# its connection string is entered in the Render dashboard (sync: false keeps
+# it out of git).
+services:
+  - type: web
+    name: reps
+    runtime: docker
+    plan: free
+    region: oregon
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /api/health
+    autoDeployTrigger: checksPass
+    envVars:
+      - key: DATABASE_URL
+        sync: false
