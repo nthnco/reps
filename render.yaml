@@ -14,3 +14,9 @@ services:
     envVars:
       - key: DATABASE_URL
         sync: false
+      - key: APP_USERNAME
+        sync: false
+      - key: APP_PASSWORD_HASH # from `uv run python -m app.hash_password`
+        sync: false
+      - key: SECRET_KEY # signs the login cookie; Render generates it once
+        generateValue: true
