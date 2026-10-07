@@ -27,6 +27,8 @@ def login(client, username="nathan", password="correct horse"):
 def test_gated_routes_reject_anonymous_requests(gated):
     assert gated.get("/api/problems").status_code == 401
     assert gated.get("/api/queue").status_code == 401
+    assert gated.get("/api/patterns/mastery").status_code == 401
+    assert gated.get("/api/profile/summary").status_code == 401
     assert gated.post("/api/problems", json={}).status_code == 401
     assert gated.get("/api/auth/me").status_code == 401
 

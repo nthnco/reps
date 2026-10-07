@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session, selectinload
 from app.clock import local_today
 from app.db import get_db
 from app.models import Problem
-from app.scheduler import schedule
+from app.sm2 import schedule
 from app.schemas import ProblemRead, QueueItem
 
 router = APIRouter(prefix="/api/queue", tags=["queue"])
@@ -24,7 +24,9 @@ def todays_queue(db: Annotated[Session, Depends(get_db)]) -> list[QueueItem]:
     due: list[QueueItem] = []
     new: list[QueueItem] = []
     for problem in problems:
-        state = schedule(problem.attempts)
+        # Pyright compares the model's Mapped[date] columns to AttemptLike's plain
+        # types and says no, though instance access does give a date.
+        state = schedule(problem.attempts)  # pyright: ignore[reportArgumentType]
         item = QueueItem(
             problem=ProblemRead.model_validate(problem),
             due_on=state.due_on if state else None,

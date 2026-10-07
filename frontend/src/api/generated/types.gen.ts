@@ -94,6 +94,26 @@ export type LoginBody = {
 };
 
 /**
+ * MasteryRulesRead
+ *
+ * The thresholds from mastery_config, so the UI can state them exactly.
+ */
+export type MasteryRulesRead = {
+    /**
+     * Overall Min Problems
+     */
+    overall_min_problems: number;
+    /**
+     * Mastered At
+     */
+    mastered_at: number;
+    /**
+     * Strength Min Attempts
+     */
+    strength_min_attempts: number;
+};
+
+/**
  * Me
  */
 export type Me = {
@@ -107,6 +127,65 @@ export type Me = {
  * Pattern
  */
 export type Pattern = 'arrays_hashing' | 'two_pointers' | 'sliding_window' | 'stack' | 'binary_search' | 'linked_list' | 'trees' | 'tries' | 'heap' | 'backtracking' | 'graphs' | 'advanced_graphs' | 'dp_1d' | 'dp_2d' | 'greedy' | 'intervals' | 'math_geometry' | 'bit_manipulation';
+
+/**
+ * PatternMasteryRead
+ */
+export type PatternMasteryRead = {
+    pattern: Pattern;
+    /**
+     * Displayed Mastery
+     */
+    displayed_mastery: number;
+    /**
+     * Mastery
+     */
+    mastery: number;
+    /**
+     * Peak
+     */
+    peak: number;
+    /**
+     * Certainty
+     */
+    certainty: number;
+    /**
+     * Low Data
+     */
+    low_data: boolean;
+    /**
+     * Attempt Count
+     */
+    attempt_count: number;
+    /**
+     * Problem Count
+     */
+    problem_count: number;
+    /**
+     * Problems Attempted
+     */
+    problems_attempted: number;
+    /**
+     * Problems Until Counted
+     */
+    problems_until_counted: number;
+    /**
+     * Attempts Until Trusted
+     */
+    attempts_until_trusted: number;
+    /**
+     * Due Count
+     */
+    due_count: number;
+    /**
+     * Last Practiced On
+     */
+    last_practiced_on: string | null;
+    /**
+     * Median Solve Seconds
+     */
+    median_solve_seconds: number | null;
+};
 
 /**
  * ProblemCreate
@@ -153,6 +232,41 @@ export type ProblemRead = {
 };
 
 /**
+ * ProfileSummaryRead
+ */
+export type ProfileSummaryRead = {
+    rules: MasteryRulesRead;
+    /**
+     * Overall
+     */
+    overall: number;
+    /**
+     * Breakdown
+     */
+    breakdown: Array<RatingPartRead>;
+    /**
+     * Strengths
+     */
+    strengths: Array<Pattern>;
+    /**
+     * Weaknesses
+     */
+    weaknesses: Array<Pattern>;
+    /**
+     * Needs Review
+     */
+    needs_review: Array<Pattern>;
+    /**
+     * Not Started
+     */
+    not_started: Array<Pattern>;
+    /**
+     * Total Completed
+     */
+    total_completed: number;
+};
+
+/**
  * QueueItem
  */
 export type QueueItem = {
@@ -161,6 +275,25 @@ export type QueueItem = {
      * Due On
      */
     due_on: string | null;
+};
+
+/**
+ * RatingPartRead
+ */
+export type RatingPartRead = {
+    pattern: Pattern;
+    /**
+     * Weight
+     */
+    weight: number;
+    /**
+     * Displayed Mastery
+     */
+    displayed_mastery: number;
+    /**
+     * Counted
+     */
+    counted: boolean;
 };
 
 /**
@@ -338,6 +471,40 @@ export type TodaysQueueApiQueueGetResponses = {
 };
 
 export type TodaysQueueApiQueueGetResponse = TodaysQueueApiQueueGetResponses[keyof TodaysQueueApiQueueGetResponses];
+
+export type GetPatternMasteryApiPatternsMasteryGetData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/patterns/mastery';
+};
+
+export type GetPatternMasteryApiPatternsMasteryGetResponses = {
+    /**
+     * Response Get Pattern Mastery Api Patterns Mastery Get
+     *
+     * Successful Response
+     */
+    200: Array<PatternMasteryRead>;
+};
+
+export type GetPatternMasteryApiPatternsMasteryGetResponse = GetPatternMasteryApiPatternsMasteryGetResponses[keyof GetPatternMasteryApiPatternsMasteryGetResponses];
+
+export type GetProfileSummaryApiProfileSummaryGetData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/profile/summary';
+};
+
+export type GetProfileSummaryApiProfileSummaryGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: ProfileSummaryRead;
+};
+
+export type GetProfileSummaryApiProfileSummaryGetResponse = GetProfileSummaryApiProfileSummaryGetResponses[keyof GetProfileSummaryApiProfileSummaryGetResponses];
 
 export type HealthApiHealthGetData = {
     body?: never;

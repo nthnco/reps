@@ -21,7 +21,7 @@ queue shows what's due
 
 ## Later branches (in order)
 
-1. **Pattern mastery view**: per-pattern confidence and speed
+1. [x] **Pattern mastery view**: per-pattern confidence and speed
 2. **GitHub linking** via the official API: detect commits, auto-log attempts
 3. **Learned scheduler**: FSRS-style recall model, evaluated against SM-2 on
    the user's own history
@@ -43,7 +43,29 @@ queue shows what's due
 - **Frontend data fetching**: TanStack Query. Cache keys live in
   `src/api/queries.ts`.
 - **Routing**: React Router. `/` is home (queue, all problems, add form);
-  `/problems/:id` is a problem's page with the log-attempt form.
+  `/problems/:id` is a problem's page with the log-attempt form; `/patterns`
+  is the mastery page (profile summary, a bar per pattern).
+- **Type checking**: pyright over `backend/app` in CI. Database models need a
+  `# pyright: ignore[reportArgumentType]` where they're passed to the pure
+  functions' `...Like` protocols (pyright sees `Mapped[date]`, not `date`).
+- **Scheduler interface**: each scheduler module (`sm2.py`, later `fsrs.py`)
+  exposes `update(state, rating, now)` and `retention(state, now)`, typed by
+  `scheduling.py`, and owns its state type. SM-2's retention is an
+  approximation: `0.9 ** (days since review / max(interval, 7))`.
+- **Pattern mastery**: computed on read from all attempts (nothing stored), so
+  backdated attempts replay in order. All numbers live in `mastery_config.py`.
+  - Score per attempt: clean solve 0.5 easy / 0.9 medium / 1.0 hard; hint or
+    slow (over 15/25/35 min) is 0.6x that; failed is 0. Easies alone can't
+    reach "mastered" (0.6).
+  - Mastery is an EWMA (weight 0.5) over a pattern's attempts in date order,
+    starting from the first score. A clean solve never lowers it; a hint or
+    slow hard never drops it below the clean-medium level. Peak never decays.
+  - Certainty is n / (n + 5) attempts; under 5 attempts is "low data" (faded,
+    never a strength).
+  - Displayed mastery = mastery x average retention of the pattern's problems,
+    with retention floored at 0.2.
+  - Overall rating averages only patterns with 2+ problems attempted.
+    "Needs work" was never mastered; "Needs review" was, and has faded.
 - **Timer**: one at a time, locked to its problem even while paused, saved in
   this browser's localStorage. "Start problem" starts it and opens LeetCode.
 - **Workflow**: one branch per leaf with a PR to `main`. The user merges it by
@@ -70,6 +92,10 @@ queue shows what's due
   (autogenerate doesn't see changes to the `ck_problems_pattern` CHECK),
   `npm run gen:api`, and a label in `frontend/src/api/labels.ts` (the build
   fails until it's there).
+- **Switching to FSRS**: change the `schedule`/`retention` imports in
+  `routes/mastery.py` and `routes/queue.py`; the mastery code and the UI only
+  see neutral numbers (0-1 mastery, due dates), so neither changes.
+- **Duration 0** counts as a fast solve when scoring mastery.
 - **Long durations**: the API accepts up to 24h. Only the log-attempt form asks
   before submitting a timer over 3h; lower the API cap if other sources
   (e.g. GitHub linking) start logging attempts.

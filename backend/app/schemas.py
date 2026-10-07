@@ -96,3 +96,51 @@ class QueueItem(BaseModel):
     problem: ProblemRead
     due_on: date | None  # None: never attempted
 
+
+class PatternMasteryRead(BaseModel):
+    pattern: Pattern
+    displayed_mastery: float  # mastery after decay; what the bar shows
+    mastery: float  # raw EWMA, before decay
+    peak: float
+    certainty: float
+    low_data: bool  # certainty below the configured minimum
+    attempt_count: int
+    problem_count: int
+    problems_attempted: int
+    # Progress nudges, so the UI can say "2 more ..." without knowing the rules.
+    problems_until_counted: int  # until it counts toward the overall rating
+    attempts_until_trusted: int  # until low_data clears
+    due_count: int  # attempted problems due for review today or earlier
+    last_practiced_on: date | None
+    median_solve_seconds: int | None
+
+
+class RatingPartRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    pattern: Pattern
+    weight: float
+    displayed_mastery: float
+    counted: bool  # enough problems attempted to count toward `overall`
+
+
+class MasteryRulesRead(BaseModel):
+    """The thresholds from mastery_config, so the UI can state them exactly."""
+
+    overall_min_problems: int
+    mastered_at: float
+    strength_min_attempts: int
+
+
+class ProfileSummaryRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    rules: MasteryRulesRead
+    overall: float
+    breakdown: list[RatingPartRead]
+    strengths: list[Pattern]
+    weaknesses: list[Pattern]  # below mastered even before decay: a skill gap
+    needs_review: list[Pattern]  # was mastered, faded below it since
+    not_started: list[Pattern]
+    total_completed: int
+

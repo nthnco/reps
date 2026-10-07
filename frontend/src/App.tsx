@@ -6,8 +6,10 @@ import { setUnauthorizedHandler } from './api/errors'
 import { queryKeys, useMe } from './api/queries'
 import { AddProblemForm } from './components/AddProblemForm'
 import { LoginPage } from './components/LoginPage'
+import { PatternMasteryList } from './components/PatternMasteryList'
 import { ProblemList } from './components/ProblemList'
 import { ProblemPage } from './components/ProblemPage'
+import { ProfileSummary } from './components/ProfileSummary'
 import { TodaysQueue } from './components/TodaysQueue'
 
 function HomePage() {
@@ -16,6 +18,15 @@ function HomePage() {
       <TodaysQueue />
       <ProblemList />
       <AddProblemForm />
+    </>
+  )
+}
+
+function MasteryPage() {
+  return (
+    <>
+      <ProfileSummary />
+      <PatternMasteryList />
     </>
   )
 }
@@ -53,15 +64,21 @@ function App() {
         <h1 className="text-2xl font-bold">
           <Link to="/">Reps</Link>
         </h1>
-        {/* Gate off (local dev): there's no username and nothing to log out of. */}
-        {me.data.username && (
-          <button type="button" onClick={handleLogout} className="text-sm underline">
-            Log out
-          </button>
-        )}
+        <nav className="flex items-center gap-4 text-sm">
+          <Link to="/patterns" className="text-blue-700 hover:underline dark:text-blue-400">
+            Mastery
+          </Link>
+          {/* Gate off (local dev): there's no username and nothing to log out of. */}
+          {me.data.username && (
+            <button type="button" onClick={handleLogout} className="underline">
+              Log out
+            </button>
+          )}
+        </nav>
       </header>
       <Routes>
         <Route path="/" element={<HomePage />} />
+        <Route path="/patterns" element={<MasteryPage />} />
         <Route path="/problems/:id" element={<ProblemPage />} />
       </Routes>
     </main>

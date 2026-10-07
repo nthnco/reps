@@ -217,6 +217,53 @@
         }
       }
     },
+    "/api/patterns/mastery": {
+      "get": {
+        "tags": [
+          "mastery"
+        ],
+        "summary": "Get Pattern Mastery",
+        "description": "One row per pattern, in the fixed pattern order, including untouched ones.",
+        "operationId": "get_pattern_mastery_api_patterns_mastery_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/PatternMasteryRead"
+                  },
+                  "type": "array",
+                  "title": "Response Get Pattern Mastery Api Patterns Mastery Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/profile/summary": {
+      "get": {
+        "tags": [
+          "mastery"
+        ],
+        "summary": "Get Profile Summary",
+        "operationId": "get_profile_summary_api_profile_summary_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfileSummaryRead"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/health": {
       "get": {
         "summary": "Health",
@@ -357,6 +404,30 @@
         ],
         "title": "LoginBody"
       },
+      "MasteryRulesRead": {
+        "properties": {
+          "overall_min_problems": {
+            "type": "integer",
+            "title": "Overall Min Problems"
+          },
+          "mastered_at": {
+            "type": "number",
+            "title": "Mastered At"
+          },
+          "strength_min_attempts": {
+            "type": "integer",
+            "title": "Strength Min Attempts"
+          }
+        },
+        "type": "object",
+        "required": [
+          "overall_min_problems",
+          "mastered_at",
+          "strength_min_attempts"
+        ],
+        "title": "MasteryRulesRead",
+        "description": "The thresholds from mastery_config, so the UI can state them exactly."
+      },
       "Me": {
         "properties": {
           "username": {
@@ -400,6 +471,98 @@
           "bit_manipulation"
         ],
         "title": "Pattern"
+      },
+      "PatternMasteryRead": {
+        "properties": {
+          "pattern": {
+            "$ref": "#/components/schemas/Pattern"
+          },
+          "displayed_mastery": {
+            "type": "number",
+            "title": "Displayed Mastery"
+          },
+          "mastery": {
+            "type": "number",
+            "title": "Mastery"
+          },
+          "peak": {
+            "type": "number",
+            "title": "Peak"
+          },
+          "certainty": {
+            "type": "number",
+            "title": "Certainty"
+          },
+          "low_data": {
+            "type": "boolean",
+            "title": "Low Data"
+          },
+          "attempt_count": {
+            "type": "integer",
+            "title": "Attempt Count"
+          },
+          "problem_count": {
+            "type": "integer",
+            "title": "Problem Count"
+          },
+          "problems_attempted": {
+            "type": "integer",
+            "title": "Problems Attempted"
+          },
+          "problems_until_counted": {
+            "type": "integer",
+            "title": "Problems Until Counted"
+          },
+          "attempts_until_trusted": {
+            "type": "integer",
+            "title": "Attempts Until Trusted"
+          },
+          "due_count": {
+            "type": "integer",
+            "title": "Due Count"
+          },
+          "last_practiced_on": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Practiced On"
+          },
+          "median_solve_seconds": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Median Solve Seconds"
+          }
+        },
+        "type": "object",
+        "required": [
+          "pattern",
+          "displayed_mastery",
+          "mastery",
+          "peak",
+          "certainty",
+          "low_data",
+          "attempt_count",
+          "problem_count",
+          "problems_attempted",
+          "problems_until_counted",
+          "attempts_until_trusted",
+          "due_count",
+          "last_practiced_on",
+          "median_solve_seconds"
+        ],
+        "title": "PatternMasteryRead"
       },
       "ProblemCreate": {
         "properties": {
@@ -471,6 +634,68 @@
         ],
         "title": "ProblemRead"
       },
+      "ProfileSummaryRead": {
+        "properties": {
+          "rules": {
+            "$ref": "#/components/schemas/MasteryRulesRead"
+          },
+          "overall": {
+            "type": "number",
+            "title": "Overall"
+          },
+          "breakdown": {
+            "items": {
+              "$ref": "#/components/schemas/RatingPartRead"
+            },
+            "type": "array",
+            "title": "Breakdown"
+          },
+          "strengths": {
+            "items": {
+              "$ref": "#/components/schemas/Pattern"
+            },
+            "type": "array",
+            "title": "Strengths"
+          },
+          "weaknesses": {
+            "items": {
+              "$ref": "#/components/schemas/Pattern"
+            },
+            "type": "array",
+            "title": "Weaknesses"
+          },
+          "needs_review": {
+            "items": {
+              "$ref": "#/components/schemas/Pattern"
+            },
+            "type": "array",
+            "title": "Needs Review"
+          },
+          "not_started": {
+            "items": {
+              "$ref": "#/components/schemas/Pattern"
+            },
+            "type": "array",
+            "title": "Not Started"
+          },
+          "total_completed": {
+            "type": "integer",
+            "title": "Total Completed"
+          }
+        },
+        "type": "object",
+        "required": [
+          "rules",
+          "overall",
+          "breakdown",
+          "strengths",
+          "weaknesses",
+          "needs_review",
+          "not_started",
+          "total_completed"
+        ],
+        "title": "ProfileSummaryRead"
+      },
       "QueueItem": {
         "properties": {
           "problem": {
@@ -495,6 +720,33 @@
           "due_on"
         ],
         "title": "QueueItem"
+      },
+      "RatingPartRead": {
+        "properties": {
+          "pattern": {
+            "$ref": "#/components/schemas/Pattern"
+          },
+          "weight": {
+            "type": "number",
+            "title": "Weight"
+          },
+          "displayed_mastery": {
+            "type": "number",
+            "title": "Displayed Mastery"
+          },
+          "counted": {
+            "type": "boolean",
+            "title": "Counted"
+          }
+        },
+        "type": "object",
+        "required": [
+          "pattern",
+          "weight",
+          "displayed_mastery",
+          "counted"
+        ],
+        "title": "RatingPartRead"
       },
       "ValidationError": {
         "properties": {
