@@ -22,11 +22,26 @@ function json(body: unknown, status = 200) {
 }
 
 // Just enough of the API for one problem: it's new until an attempt is logged.
-function fakeBackend() {
+// `gated` turns on the login gate (password "pw"); `expire()` ends the session.
+function fakeBackend({ gated = false } = {}) {
   let attempted = false
-  return vi.fn(async (url: string, init?: RequestInit) => {
+  let loggedIn = !gated
+  const fetchMock = vi.fn(async (url: string, init?: RequestInit) => {
     const route = `${init?.method ?? 'GET'} ${url}`
+    if (route === 'POST /api/auth/login') {
+      const { password } = JSON.parse(init!.body as string)
+      if (password !== 'pw') return json({ detail: 'Wrong username or password' }, 401)
+      loggedIn = true
+      return new Response(null, { status: 204 })
+    }
+    if (route === 'POST /api/auth/logout') {
+      loggedIn = !gated
+      return new Response(null, { status: 204 })
+    }
+    if (!loggedIn) return json({ detail: 'Not logged in' }, 401)
     switch (route) {
+      case 'GET /api/auth/me':
+        return json({ username: gated ? 'nathan' : null })
       case 'GET /api/problems':
         return json([TWO_SUM])
       case 'GET /api/queue':
@@ -38,26 +53,29 @@ function fakeBackend() {
         throw new Error(`Unexpected request: ${route}`)
     }
   })
+  return { fetchMock, expire: () => (loggedIn = false) }
 }
 
 beforeEach(() => {
   localStorage.clear()
-  vi.stubGlobal('fetch', fakeBackend())
+  vi.stubGlobal('fetch', fakeBackend().fetchMock)
 })
 
 afterEach(() => {
   vi.unstubAllGlobals()
 })
 
-test('renders the app heading', () => {
+test('with the gate off, the app shows without a login or logout', async () => {
   renderWithProviders(<App />)
-  expect(screen.getByRole('heading', { name: 'Reps' })).toBeInTheDocument()
+  expect(await screen.findByRole('heading', { name: "Today's queue" })).toBeInTheDocument()
+  expect(screen.queryByRole('button', { name: 'Log out' })).not.toBeInTheDocument()
 })
 
 test('logging an attempt takes the problem off the queue', async () => {
   const user = userEvent.setup()
   renderWithProviders(<App />)
 
+  await screen.findByRole('heading', { name: "Today's queue" })
   const queue = () => screen.getByRole('heading', { name: "Today's queue" }).closest('section')!
   await user.click(await within(queue()).findByRole('link', { name: 'Two Sum' }))
 
@@ -81,9 +99,51 @@ test('the problem page says so when the problem does not exist', async () => {
 test('all problems link to their problem pages', async () => {
   renderWithProviders(<App />)
 
-  const list = screen.getByRole('heading', { name: 'All problems' }).closest('section')!
+  const list = (await screen.findByRole('heading', { name: 'All problems' })).closest('section')!
   expect(await within(list).findByRole('link', { name: 'Two Sum' })).toHaveAttribute(
     'href',
     '/problems/7',
   )
+})
+
+async function logIn(password: string) {
+  const user = userEvent.setup()
+  await user.type(await screen.findByLabelText('Username'), 'nathan')
+  await user.type(screen.getByLabelText('Password'), password)
+  await user.click(screen.getByRole('button', { name: 'Log in' }))
+  return user
+}
+
+test('a wrong password stays on the login page', async () => {
+  vi.stubGlobal('fetch', fakeBackend({ gated: true }).fetchMock)
+  renderWithProviders(<App />)
+
+  await logIn('nope')
+
+  expect(await screen.findByRole('alert')).toHaveTextContent('Wrong username or password.')
+  expect(screen.getByLabelText('Password')).toHaveValue('')
+})
+
+test('logging in shows the app, logging out returns to the login page', async () => {
+  vi.stubGlobal('fetch', fakeBackend({ gated: true }).fetchMock)
+  renderWithProviders(<App />)
+
+  const user = await logIn('pw')
+  expect(await screen.findByRole('heading', { name: "Today's queue" })).toBeInTheDocument()
+
+  await user.click(screen.getByRole('button', { name: 'Log out' }))
+  expect(await screen.findByLabelText('Password')).toBeInTheDocument()
+})
+
+test('a session that expires mid-use goes back to the login page', async () => {
+  const backend = fakeBackend({ gated: true })
+  vi.stubGlobal('fetch', backend.fetchMock)
+  const { queryClient } = renderWithProviders(<App />)
+  await logIn('pw')
+  await screen.findByRole('heading', { name: "Today's queue" })
+
+  backend.expire()
+  await queryClient.invalidateQueries({ queryKey: ['queue'] })
+
+  expect(await screen.findByLabelText('Password')).toBeInTheDocument()
 })
