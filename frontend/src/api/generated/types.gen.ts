@@ -229,6 +229,10 @@ export type ProblemRead = {
      * Notes
      */
     notes: string;
+    /**
+     * Is Premium
+     */
+    is_premium: boolean;
 };
 
 /**

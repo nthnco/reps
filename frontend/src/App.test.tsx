@@ -12,6 +12,7 @@ const TWO_SUM: ProblemRead = {
   pattern: 'arrays_hashing',
   difficulty: 'easy',
   notes: '',
+  is_premium: false,
 }
 
 function json(body: unknown, status = 200) {

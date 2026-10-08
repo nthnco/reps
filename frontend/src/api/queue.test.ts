@@ -11,6 +11,7 @@ const QUEUE: QueueItem[] = [
       pattern: 'arrays_hashing',
       difficulty: 'easy',
       notes: '',
+      is_premium: false,
     },
     due_on: '2026-10-03',
   },
