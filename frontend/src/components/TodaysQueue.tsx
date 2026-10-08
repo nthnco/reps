@@ -1,8 +1,9 @@
 import { Link } from 'react-router'
 import type { QueueItem } from '../api/generated'
-import { DIFFICULTY_LABELS, PATTERN_LABELS } from '../api/labels'
+import { PATTERN_LABELS } from '../api/labels'
 import { useTodaysQueue } from '../api/queries'
 import { formatDueDate } from '../dates'
+import { DifficultyBadge } from './DifficultyBadge'
 
 // How many of each list to show. Finishing one brings in the next; the rest are
 // still due, just hidden, so a backlog shows up in the "more" line.
@@ -62,8 +63,9 @@ function QueueList({ title, items, limit }: { title: string; items: QueueItem[];
               >
                 {problem.title}
               </Link>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
-                {PATTERN_LABELS[problem.pattern]} · {DIFFICULTY_LABELS[problem.difficulty]}
+              <p className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+                {PATTERN_LABELS[problem.pattern]}
+                <DifficultyBadge difficulty={problem.difficulty} />
               </p>
             </div>
             <span className="shrink-0 text-sm text-gray-600 dark:text-gray-400">

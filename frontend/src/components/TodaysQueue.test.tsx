@@ -47,12 +47,14 @@ test('splits due and new problems into separate lists', async () => {
     'href',
     '/problems/7',
   )
-  expect(review).toHaveTextContent('Arrays & Hashing · Easy')
+  expect(review).toHaveTextContent('Arrays & Hashing')
+  expect(within(review).getByText('Easy')).toHaveClass('bg-green-100')
   expect(review).toHaveTextContent('Due Oct 3')
 
   const fresh = within(screen.getByRole('region', { name: 'New' })).getByRole('listitem')
   expect(fresh).toHaveTextContent('Coin Change')
-  expect(fresh).toHaveTextContent('1-D Dynamic Programming · Medium')
+  expect(fresh).toHaveTextContent('1-D Dynamic Programming')
+  expect(within(fresh).getByText('Medium')).toHaveClass('bg-yellow-100')
   expect(fresh).toHaveTextContent('New')
 })
 
