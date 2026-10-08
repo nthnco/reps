@@ -4,7 +4,7 @@ import type { ProblemRead } from '../api/generated'
 import { getTodaysQueue } from '../api/queue'
 import { renderWithProviders } from '../test/render'
 import { formatDueDate } from '../dates'
-import { TodaysQueue } from './TodaysQueue'
+import { NEW_LIMIT, REVIEW_LIMIT, TodaysQueue } from './TodaysQueue'
 
 vi.mock('../api/queue', () => ({ getTodaysQueue: vi.fn() }))
 const getTodaysQueueMock = vi.mocked(getTodaysQueue)
@@ -30,26 +30,63 @@ beforeEach(() => {
   getTodaysQueueMock.mockReset()
 })
 
-test('lists due and new problems in the order the API returns them', async () => {
+function problem(id: number): ProblemRead {
+  return { ...TWO_SUM, id, title: `Problem ${id}` }
+}
+
+test('splits due and new problems into separate lists', async () => {
   getTodaysQueueMock.mockResolvedValue([
     { problem: TWO_SUM, due_on: '2026-10-03' },
     { problem: COIN_CHANGE, due_on: null },
   ])
   renderWithProviders(<TodaysQueue />)
 
-  const items = await screen.findAllByRole('listitem')
-  expect(items).toHaveLength(2)
-
-  expect(within(items[0]).getByRole('link', { name: 'Two Sum' })).toHaveAttribute(
+  const reviews = await screen.findByRole('region', { name: 'Reviews' })
+  const review = within(reviews).getByRole('listitem')
+  expect(within(review).getByRole('link', { name: 'Two Sum' })).toHaveAttribute(
     'href',
     '/problems/7',
   )
-  expect(items[0]).toHaveTextContent('Arrays & Hashing · Easy')
-  expect(items[0]).toHaveTextContent('Due Oct 3')
+  expect(review).toHaveTextContent('Arrays & Hashing · Easy')
+  expect(review).toHaveTextContent('Due Oct 3')
 
-  expect(items[1]).toHaveTextContent('Coin Change')
-  expect(items[1]).toHaveTextContent('1-D Dynamic Programming · Medium')
-  expect(items[1]).toHaveTextContent('New')
+  const fresh = within(screen.getByRole('region', { name: 'New' })).getByRole('listitem')
+  expect(fresh).toHaveTextContent('Coin Change')
+  expect(fresh).toHaveTextContent('1-D Dynamic Programming · Medium')
+  expect(fresh).toHaveTextContent('New')
+})
+
+test('shows only the first few of each list, in API order, and counts the rest', async () => {
+  const due = Array.from({ length: REVIEW_LIMIT + 3 }, (_, i) => ({
+    problem: problem(i),
+    due_on: '2026-10-03',
+  }))
+  const fresh = Array.from({ length: NEW_LIMIT + 2 }, (_, i) => ({
+    problem: problem(100 + i),
+    due_on: null,
+  }))
+  getTodaysQueueMock.mockResolvedValue([...due, ...fresh])
+  renderWithProviders(<TodaysQueue />)
+
+  const reviews = await screen.findByRole('region', { name: 'Reviews' })
+  const shown = within(reviews).getAllByRole('listitem')
+  expect(shown).toHaveLength(REVIEW_LIMIT)
+  expect(shown[0]).toHaveTextContent('Problem 0')
+  expect(reviews).toHaveTextContent(`(${REVIEW_LIMIT + 3})`)
+  expect(reviews).toHaveTextContent('+3 more after these')
+
+  const news = screen.getByRole('region', { name: 'New' })
+  expect(within(news).getAllByRole('listitem')).toHaveLength(NEW_LIMIT)
+  expect(news).toHaveTextContent('+2 more after these')
+})
+
+test('leaves out an empty list and the "more" line when everything fits', async () => {
+  getTodaysQueueMock.mockResolvedValue([{ problem: COIN_CHANGE, due_on: null }])
+  renderWithProviders(<TodaysQueue />)
+
+  await screen.findByRole('region', { name: 'New' })
+  expect(screen.queryByRole('region', { name: 'Reviews' })).not.toBeInTheDocument()
+  expect(screen.queryByText(/more after these/)).not.toBeInTheDocument()
 })
 
 test('says so when nothing is due', async () => {
