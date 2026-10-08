@@ -106,6 +106,19 @@ test('all problems link to their problem pages', async () => {
   )
 })
 
+test('the add-problem form has its own page, reached from the nav', async () => {
+  const user = userEvent.setup()
+  renderWithProviders(<App />)
+
+  await screen.findByRole('heading', { name: "Today's queue" })
+  expect(screen.queryByRole('heading', { name: 'Add a problem' })).not.toBeInTheDocument()
+
+  await user.click(screen.getByRole('link', { name: 'Add problem' }))
+  expect(await screen.findByRole('heading', { name: 'Add a problem' })).toBeInTheDocument()
+  // Not mistaken for a problem with id "new".
+  expect(screen.queryByText("That problem doesn't exist.")).not.toBeInTheDocument()
+})
+
 async function logIn(password: string) {
   const user = userEvent.setup()
   await user.type(await screen.findByLabelText('Username'), 'nathan')

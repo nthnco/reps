@@ -6,6 +6,12 @@ export const inputClass =
 export const submitClass =
   'rounded bg-blue-600 px-4 py-2 font-medium text-white hover:bg-blue-700 disabled:opacity-50'
 
+export const primaryButtonClass =
+  'rounded bg-blue-600 px-3 py-1.5 font-medium text-white hover:bg-blue-700'
+
+export const secondaryButtonClass =
+  'rounded border border-gray-300 px-3 py-1.5 font-medium hover:bg-gray-100 dark:border-gray-600 dark:hover:bg-gray-800'
+
 /** Marks an input invalid and links it to its error text (read by screen readers). */
 export function errorProps(id: string, error: string | undefined) {
   return error ? { 'aria-invalid': true, 'aria-describedby': `${id}-error` } : {}

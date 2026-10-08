@@ -5,6 +5,7 @@ import { logout } from './api/auth'
 import { setUnauthorizedHandler } from './api/errors'
 import { queryKeys, useMe } from './api/queries'
 import { AddProblemForm } from './components/AddProblemForm'
+import { primaryButtonClass, secondaryButtonClass } from './components/fields'
 import { LoginPage } from './components/LoginPage'
 import { PatternMasteryList } from './components/PatternMasteryList'
 import { ProblemList } from './components/ProblemList'
@@ -17,8 +18,18 @@ function HomePage() {
     <>
       <TodaysQueue />
       <ProblemList />
-      <AddProblemForm />
     </>
+  )
+}
+
+function AddProblemPage() {
+  return (
+    <div className="space-y-6">
+      <Link to="/" className="text-blue-700 hover:underline dark:text-blue-400">
+        ← All problems
+      </Link>
+      <AddProblemForm />
+    </div>
   )
 }
 
@@ -64,13 +75,17 @@ function App() {
         <h1 className="text-2xl font-bold">
           <Link to="/">Reps</Link>
         </h1>
-        <nav className="flex items-center gap-4 text-sm">
-          <Link to="/patterns" className="text-blue-700 hover:underline dark:text-blue-400">
+        {/* Navigation stays as links (styled as buttons) so open-in-new-tab still works. */}
+        <nav className="flex items-center gap-2 text-sm">
+          <Link to="/problems/new" className={primaryButtonClass}>
+            Add problem
+          </Link>
+          <Link to="/patterns" className={secondaryButtonClass}>
             Mastery
           </Link>
           {/* Gate off (local dev): there's no username and nothing to log out of. */}
           {me.data.username && (
-            <button type="button" onClick={handleLogout} className="underline">
+            <button type="button" onClick={handleLogout} className={secondaryButtonClass}>
               Log out
             </button>
           )}
@@ -79,6 +94,7 @@ function App() {
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/patterns" element={<MasteryPage />} />
+        <Route path="/problems/new" element={<AddProblemPage />} />
         <Route path="/problems/:id" element={<ProblemPage />} />
       </Routes>
     </main>
