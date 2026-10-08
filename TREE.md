@@ -64,6 +64,13 @@ queue shows what's due
     SM-2's approximation falls towards 0.
   - Mastery follows whichever scheduler is active, so under FSRS patterns fade
     more slowly and "Needs review" shows up less often.
+- **Scheduler evaluation** (`uv run python -m app.evaluate`, read-only): before
+  each repeat attempt, a scheduler's retention that day is its prediction;
+  the outcome is "recalled" = solved, with or without a hint. First attempts
+  and same-day repeats aren't scored. Reports log loss, RMSE, and mean
+  predicted vs actual; under 100 scored reviews it says there's not enough
+  data (a judgment call). Run it against real history only: the demo's data
+  is generated, so scoring it measures the seed script.
 - **Pattern mastery**: computed on read from all attempts (nothing stored), so
   backdated attempts replay in order. All numbers live in `mastery_config.py`.
   - Score per attempt: clean solve 0.5 easy / 0.9 medium / 1.0 hard; hint or
