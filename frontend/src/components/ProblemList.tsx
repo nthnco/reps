@@ -1,6 +1,26 @@
 import { Link } from 'react-router'
-import { DIFFICULTY_LABELS, PATTERN_LABELS } from '../api/labels'
+import type { Difficulty, Pattern, ProblemRead } from '../api/generated'
+import { PATTERN_LABELS } from '../api/labels'
 import { useProblems } from '../api/queries'
+import { DifficultyBadge } from './DifficultyBadge'
+
+const DIFFICULTY_ORDER: Record<Difficulty, number> = { easy: 0, medium: 1, hard: 2 }
+
+/** Problems grouped by pattern, in PATTERN_LABELS order; patterns with none are left out. */
+function byPattern(problems: ProblemRead[]): [Pattern, ProblemRead[]][] {
+  return (Object.keys(PATTERN_LABELS) as Pattern[])
+    .map((pattern): [Pattern, ProblemRead[]] => [
+      pattern,
+      problems
+        .filter((p) => p.pattern === pattern)
+        .sort(
+          (a, b) =>
+            DIFFICULTY_ORDER[a.difficulty] - DIFFICULTY_ORDER[b.difficulty] ||
+            a.title.localeCompare(b.title),
+        ),
+    ])
+    .filter(([, group]) => group.length > 0)
+}
 
 export function ProblemList() {
   const problems = useProblems()
@@ -16,23 +36,34 @@ export function ProblemList() {
           {problems.error.message}
         </p>
       ) : problems.data.length === 0 ? (
-        <p>No problems yet. Add one below.</p>
+        <p>No problems yet. Use "Add problem" to add one.</p>
       ) : (
-        <ul className="divide-y divide-gray-200 rounded border border-gray-200 dark:divide-gray-700 dark:border-gray-700">
-          {problems.data.map((problem) => (
-            <li key={problem.id} className="p-3">
-              <Link
-                to={`/problems/${problem.id}`}
-                className="font-medium text-blue-700 hover:underline dark:text-blue-400"
-              >
-                {problem.title}
-              </Link>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
-                {PATTERN_LABELS[problem.pattern]} · {DIFFICULTY_LABELS[problem.difficulty]}
-              </p>
-            </li>
+        <div className="divide-y divide-gray-200 rounded border border-gray-200 dark:divide-gray-700 dark:border-gray-700">
+          {byPattern(problems.data).map(([pattern, group]) => (
+            // Native <details>: collapsed by default, keyboard and screen-reader friendly, no state.
+            <details key={pattern} className="group">
+              <summary className="flex cursor-pointer items-center justify-between p-3 font-medium hover:bg-gray-50 dark:hover:bg-gray-800">
+                {PATTERN_LABELS[pattern]}
+                <span className="text-sm font-normal text-gray-600 dark:text-gray-400">
+                  {group.length}
+                </span>
+              </summary>
+              <ul className="divide-y divide-gray-100 border-t border-gray-200 dark:divide-gray-800 dark:border-gray-700">
+                {group.map((problem) => (
+                  <li key={problem.id} className="flex items-center justify-between gap-4 py-2 pr-3 pl-6">
+                    <Link
+                      to={`/problems/${problem.id}`}
+                      className="text-blue-700 hover:underline dark:text-blue-400"
+                    >
+                      {problem.title}
+                    </Link>
+                    <DifficultyBadge difficulty={problem.difficulty} />
+                  </li>
+                ))}
+              </ul>
+            </details>
           ))}
-        </ul>
+        </div>
       )}
     </section>
   )
