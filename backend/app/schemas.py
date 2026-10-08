@@ -13,6 +13,7 @@ from pydantic import AfterValidator, BaseModel, ConfigDict, Field, StringConstra
 
 from app.clock import local_today
 from app.models import Difficulty, Pattern
+from app.suggest import Reason
 
 
 _SLUG = re.compile(r"[a-z0-9-]+")
@@ -114,6 +115,13 @@ class PatternMasteryRead(BaseModel):
     due_count: int  # attempted problems due for review today or earlier
     last_practiced_on: date | None
     median_solve_seconds: int | None
+    covered: bool  # breadth pass done; see app/suggest.py
+
+
+class SuggestionRead(BaseModel):
+    pattern: Pattern
+    problem: ProblemRead | None  # None: nothing new left in the pattern
+    reason: Reason  # the frontend words it, since pattern labels live there
 
 
 class RatingPartRead(BaseModel):

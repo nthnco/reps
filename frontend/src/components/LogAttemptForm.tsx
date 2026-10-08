@@ -89,6 +89,7 @@ export function LogAttemptForm({ problem }: { problem: ProblemRead }) {
       void queryClient.invalidateQueries({ queryKey: queryKeys.queue })
       void queryClient.invalidateQueries({ queryKey: queryKeys.patternMastery })
       void queryClient.invalidateQueries({ queryKey: queryKeys.profileSummary })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.suggestion })
     } else {
       setMessage(result.message)
       setFieldErrors(result.fieldErrors)

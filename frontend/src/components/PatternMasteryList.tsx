@@ -74,6 +74,14 @@ function PatternRow({ row }: { row: PatternMasteryRead }) {
               Low data
             </span>
           )}
+          {row.covered && (
+            <span
+              title="2+ mediums solved, one without a hint"
+              className="ml-2 rounded bg-blue-50 px-1.5 py-0.5 text-xs font-normal text-blue-700 dark:bg-blue-900/40 dark:text-blue-300"
+            >
+              Covered
+            </span>
+          )}
         </span>
         <span className="shrink-0 tabular-nums">{untouched ? '—' : `${shown}%`}</span>
       </div>

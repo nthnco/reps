@@ -243,6 +243,36 @@
         }
       }
     },
+    "/api/patterns/suggestion": {
+      "get": {
+        "tags": [
+          "mastery"
+        ],
+        "summary": "Get Suggestion",
+        "description": "Where to pick up new material; null once nothing new is left anywhere.",
+        "operationId": "get_suggestion_api_patterns_suggestion_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/SuggestionRead"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "title": "Response Get Suggestion Api Patterns Suggestion Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/profile/summary": {
       "get": {
         "tags": [
@@ -543,6 +573,10 @@
               }
             ],
             "title": "Median Solve Seconds"
+          },
+          "covered": {
+            "type": "boolean",
+            "title": "Covered"
           }
         },
         "type": "object",
@@ -560,7 +594,8 @@
           "attempts_until_trusted",
           "due_count",
           "last_practiced_on",
-          "median_solve_seconds"
+          "median_solve_seconds",
+          "covered"
         ],
         "title": "PatternMasteryRead"
       },
@@ -745,6 +780,44 @@
           "counted"
         ],
         "title": "RatingPartRead"
+      },
+      "Reason": {
+        "type": "string",
+        "enum": [
+          "start_easy",
+          "next_medium",
+          "step_back",
+          "keep_reviewing",
+          "deepen"
+        ],
+        "title": "Reason"
+      },
+      "SuggestionRead": {
+        "properties": {
+          "pattern": {
+            "$ref": "#/components/schemas/Pattern"
+          },
+          "problem": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ProblemRead"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "reason": {
+            "$ref": "#/components/schemas/Reason"
+          }
+        },
+        "type": "object",
+        "required": [
+          "pattern",
+          "problem",
+          "reason"
+        ],
+        "title": "SuggestionRead"
       },
       "ValidationError": {
         "properties": {

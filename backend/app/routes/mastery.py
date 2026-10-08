@@ -25,9 +25,16 @@ from app.mastery import (
     total_completed,
 )
 from app.models import Pattern
-from app.schemas import MasteryRulesRead, PatternMasteryRead, ProfileSummaryRead
+from app.schemas import (
+    MasteryRulesRead,
+    PatternMasteryRead,
+    ProblemRead,
+    ProfileSummaryRead,
+    SuggestionRead,
+)
 from app.sm2 import ReviewState, retention, schedule
 from app.snapshot import ProblemSnapshot, load_problems
+from app.suggest import covered_patterns, suggest
 
 router = APIRouter(prefix="/api", tags=["mastery"])
 
@@ -66,6 +73,7 @@ def build_pattern_mastery(db: Session, as_of: date | None = None) -> list[Patter
     states = _states_by_pattern(problems)
     displayed = _displayed(rows, states, today)
     problem_counts = Counter(p.pattern for p in problems)
+    covered = covered_patterns(problems)  # pyright: ignore[reportArgumentType]
 
     return [
         PatternMasteryRead(
@@ -83,9 +91,32 @@ def build_pattern_mastery(db: Session, as_of: date | None = None) -> list[Patter
             due_count=sum(1 for s in states[row.pattern] if s.due_on <= today),
             last_practiced_on=row.last_practiced_on,
             median_solve_seconds=row.median_solve_seconds,
+            covered=covered[row.pattern],
         )
         for row in rows
     ]
+
+
+@router.get("/patterns/suggestion", response_model=SuggestionRead | None)
+def get_suggestion(db: Annotated[Session, Depends(get_db)]) -> SuggestionRead | None:
+    """Where to pick up new material; null once nothing new is left anywhere."""
+    return build_suggestion(db)
+
+
+def build_suggestion(db: Session, as_of: date | None = None) -> SuggestionRead | None:
+    """The suggestion as it stood at the start of `as_of` (default: live, as of now)."""
+    problems = load_problems(db, as_of)
+    rows = pattern_mastery(problems)  # pyright: ignore[reportArgumentType]
+    raw_mastery = {row.pattern: row.mastery for row in rows}
+    suggestion = suggest(problems, raw_mastery)  # pyright: ignore[reportArgumentType]
+    if suggestion is None:
+        return None
+    problem = suggestion.problem
+    return SuggestionRead(
+        pattern=suggestion.pattern,
+        problem=ProblemRead.model_validate(problem) if problem else None,
+        reason=suggestion.reason,
+    )
 
 
 @router.get("/profile/summary", response_model=ProfileSummaryRead)

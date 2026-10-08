@@ -185,6 +185,10 @@ export type PatternMasteryRead = {
      * Median Solve Seconds
      */
     median_solve_seconds: number | null;
+    /**
+     * Covered
+     */
+    covered: boolean;
 };
 
 /**
@@ -298,6 +302,20 @@ export type RatingPartRead = {
      * Counted
      */
     counted: boolean;
+};
+
+/**
+ * Reason
+ */
+export type Reason = 'start_easy' | 'next_medium' | 'step_back' | 'keep_reviewing' | 'deepen';
+
+/**
+ * SuggestionRead
+ */
+export type SuggestionRead = {
+    pattern: Pattern;
+    problem: ProblemRead | null;
+    reason: Reason;
 };
 
 /**
@@ -493,6 +511,24 @@ export type GetPatternMasteryApiPatternsMasteryGetResponses = {
 };
 
 export type GetPatternMasteryApiPatternsMasteryGetResponse = GetPatternMasteryApiPatternsMasteryGetResponses[keyof GetPatternMasteryApiPatternsMasteryGetResponses];
+
+export type GetSuggestionApiPatternsSuggestionGetData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/patterns/suggestion';
+};
+
+export type GetSuggestionApiPatternsSuggestionGetResponses = {
+    /**
+     * Response Get Suggestion Api Patterns Suggestion Get
+     *
+     * Successful Response
+     */
+    200: SuggestionRead | null;
+};
+
+export type GetSuggestionApiPatternsSuggestionGetResponse = GetSuggestionApiPatternsSuggestionGetResponses[keyof GetSuggestionApiPatternsSuggestionGetResponses];
 
 export type GetProfileSummaryApiProfileSummaryGetData = {
     body?: never;

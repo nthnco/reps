@@ -31,7 +31,7 @@ Build next, in this order: 8, 9, 7, 10, 11. The rest wait.
 5. **Company readiness**: framed as coverage of the patterns a company's
    questions lean on; only once the data supports it
 6. **Accounts and a shareable demo**
-7. **Next-pattern suggestion**: point at the earliest pattern, in roadmap
+7. [x] **Next-pattern suggestion**: point at the earliest pattern, in roadmap
    order (`PATTERN_LABELS`), that isn't covered yet, and one problem in it.
    A nudge, not a gate. A pure function over problems and attempts.
    - Why not gate tiers on mastery: interviews test spotting the pattern,
@@ -59,10 +59,18 @@ Build next, in this order: 8, 9, 7, 10, 11. The rest wait.
      left, move up a tier in the same pattern, up to medium. Failed problems
      are the queue's job, never "new". No pattern problem left: "keep
      reviewing <pattern>".
-   - **No hards**. Once every pattern is covered, suggest the next medium in
-     the pattern with the lowest raw mastery (ties: roadmap order).
-   - Served on `/api/patterns/mastery`: `covered` per pattern, plus the
-     suggestion and a one-sentence reason.
+   - **No hards** until every pattern is covered. Then suggest the next
+     medium in the pattern with the lowest raw mastery (ties: roadmap
+     order); once no new medium is left anywhere, the next hard the same
+     way. Nothing new left at all: no suggestion (`null`).
+   - Served as `covered` on each `/api/patterns/mastery` row, and the
+     suggestion on `GET /api/patterns/suggestion` (kept off the mastery
+     list so its shape doesn't change). The reason is a kind (`Reason` in
+     `app/suggest.py`); the frontend words it, since pattern labels live
+     there.
+   - A pattern with no problems at all can never be covered, so it would
+     hold the suggestion on "keep reviewing" forever. The preload fills
+     every pattern; revisit if a pattern is ever added.
 8. **As-of replay** (build first): replay only attempts dated before a
    given day, and use that day as "today". Filter the attempts where the
    routes load problems; the pure functions don't change. `None` keeps

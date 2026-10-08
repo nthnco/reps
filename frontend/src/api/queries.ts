@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { getMe } from './auth'
-import { getPatternMastery, getProfileSummary } from './mastery'
+import { getPatternMastery, getProfileSummary, getSuggestion } from './mastery'
 import { listProblems } from './problems'
 import { getTodaysQueue } from './queue'
 
@@ -9,9 +9,10 @@ export const queryKeys = {
   me: ['me'] as const,
   problems: ['problems'] as const,
   queue: ['queue'] as const,
-  // Both are computed from every problem and attempt, so any save stales them.
+  // All three are computed from every problem and attempt, so any save stales them.
   patternMastery: ['patternMastery'] as const,
   profileSummary: ['profileSummary'] as const,
+  suggestion: ['suggestion'] as const,
 }
 
 export function useMe() {
@@ -32,4 +33,8 @@ export function usePatternMastery() {
 
 export function useProfileSummary() {
   return useQuery({ queryKey: queryKeys.profileSummary, queryFn: getProfileSummary })
+}
+
+export function useSuggestion() {
+  return useQuery({ queryKey: queryKeys.suggestion, queryFn: getSuggestion })
 }
