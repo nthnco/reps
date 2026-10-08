@@ -14,7 +14,7 @@ def test_create_problem(client):
     assert response.status_code == 201
     body = response.json()
     assert isinstance(body["id"], int)
-    assert body | {"id": None} == VALID | {"id": None, "notes": ""}
+    assert body | {"id": None} == VALID | {"id": None, "notes": "", "is_premium": False}
 
 
 def test_create_problem_strips_whitespace(client):

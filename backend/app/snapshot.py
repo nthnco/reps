@@ -23,6 +23,7 @@ class ProblemSnapshot:
     pattern: Pattern
     difficulty: Difficulty
     notes: str
+    is_premium: bool
     attempts: tuple[Attempt, ...]
 
 
@@ -38,6 +39,7 @@ def load_problems(db: Session, as_of: date | None = None) -> list[ProblemSnapsho
             pattern=p.pattern,
             difficulty=p.difficulty,
             notes=p.notes,
+            is_premium=p.is_premium,
             attempts=tuple(
                 a for a in p.attempts if as_of is None or a.attempted_on < as_of
             ),

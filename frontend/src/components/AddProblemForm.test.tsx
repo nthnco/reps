@@ -41,6 +41,7 @@ test('submits the problem, shows success, and clears the form', async () => {
       pattern: 'arrays_hashing',
       difficulty: 'easy',
       notes: '',
+      is_premium: false,
     },
   })
   const { queryClient } = renderWithProviders(<AddProblemForm />)
