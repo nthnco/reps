@@ -61,6 +61,7 @@ def test_empty_mastery_has_a_row_per_pattern(client):
         "due_count": 0,
         "last_practiced_on": None,
         "median_solve_seconds": None,
+        "covered": False,
     }
 
 
