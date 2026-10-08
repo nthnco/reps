@@ -71,8 +71,9 @@ Build next, in this order: 8, 9, 7, 10, 11. The rest wait.
      attempts dated before that day. (It can't match what the screen
      showed then: attempts can be backdated and there's no `created_at`.)
 9. **NeetCode 150 preload** (build second): an Alembic data migration
-   inserts the 150 (number, title, link, pattern, difficulty; no
-   statements) in NeetCode order, skipping links already in the database.
+   inserts the 150 (title, link, pattern, difficulty; no statements, and
+   no number: that column was dropped) in NeetCode order, skipping links
+   already in the database.
    Links go through `normalize_leetcode_link` so existing problems match.
    Never-attempted problems leave today's queue; new material comes only
    from branch 7.
