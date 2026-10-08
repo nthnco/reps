@@ -1,6 +1,7 @@
 import { Link, useParams } from 'react-router'
-import { DIFFICULTY_LABELS, PATTERN_LABELS } from '../api/labels'
+import { PATTERN_LABELS } from '../api/labels'
 import { useProblems } from '../api/queries'
+import { DifficultyBadge } from './DifficultyBadge'
 import { LogAttemptForm } from './LogAttemptForm'
 
 export function ProblemPage() {
@@ -27,8 +28,9 @@ export function ProblemPage() {
         <>
           <div>
             <h2 className="text-xl font-semibold">{problem.title}</h2>
-            <p className="text-sm text-gray-600 dark:text-gray-400">
-              {PATTERN_LABELS[problem.pattern]} · {DIFFICULTY_LABELS[problem.difficulty]}
+            <p className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+              {PATTERN_LABELS[problem.pattern]}
+              <DifficultyBadge difficulty={problem.difficulty} />
             </p>
           </div>
           {/* key: a fresh form (no leftover answers) when moving between problems. */}
