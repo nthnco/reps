@@ -19,7 +19,9 @@ queue shows what's due
 - [x] **Tests** for the scheduler, the main API routes, and the key React
       components
 
-## Later branches (in order)
+## Later branches
+
+Build next, in this order: 8, 9, 7, 10, 11. The rest wait.
 
 1. [x] **Pattern mastery view**: per-pattern confidence and speed
 2. **GitHub linking** via the official API: detect commits, auto-log attempts
@@ -30,7 +32,8 @@ queue shows what's due
    questions lean on; only once the data supports it
 6. **Accounts and a shareable demo**
 7. **Next-pattern suggestion**: point at the earliest pattern, in roadmap
-   order (`PATTERN_LABELS`), that isn't covered yet. A nudge, not a gate.
+   order (`PATTERN_LABELS`), that isn't covered yet, and one problem in it.
+   A nudge, not a gate. A pure function over problems and attempts.
    - Why not gate tiers on mastery: interviews test spotting the pattern,
      which mixed practice (the queue) trains and blocked practice doesn't;
      FAANG rounds are mostly mediums, so clearing all easies first is slow;
@@ -40,8 +43,52 @@ queue shows what's due
    - Intended flow: a breadth pass (1-2 easies, then 2-3 mediums per
      pattern), then depth through the mixed queue, then hards and timed
      practice.
-   - Open: what "covered" means. Proposed: 2 solved mediums, hints allowed,
-     independent of the mastery score.
+   - Counts distinct problems, never attempts. "No hint" means only that:
+     no time limit, and not mastery's `is_clean()`. A no-hint solve on a
+     review counts.
+   - **Covered**: 2+ different mediums solved (hints allowed), at least one
+     solve without a hint. Counts solves, not mastery or retention, so a
+     long break or new problems can't un-cover a pattern.
+   - **Tier**: start at the lowest difficulty the pattern has (some have no
+     easies). Stay on easies until 1 is solved without a hint or 2 different
+     ones are solved, then mediums.
+   - **Step back**: if the pattern's last two attempts both failed, one tier
+     below the last problem attempted, never below the pattern's lowest.
+   - **Problem**: the never-attempted problem of that tier with the lowest
+     `id` (the preload inserts in NeetCode order). If the tier has none
+     left, move up a tier in the same pattern, up to medium. Failed problems
+     are the queue's job, never "new". No pattern problem left: "keep
+     reviewing <pattern>".
+   - **No hards**. Once every pattern is covered, suggest the next medium in
+     the pattern with the lowest raw mastery (ties: roadmap order).
+   - Served on `/api/patterns/mastery`: `covered` per pattern, plus the
+     suggestion and a one-sentence reason.
+8. **As-of replay** (build first): replay only attempts dated before a
+   given day, and use that day as "today". Filter the attempts where the
+   routes load problems; the pure functions don't change. `None` keeps
+   today's behaviour. Raw mastery is already in the response (`mastery`).
+   - Test: an as-of result equals the live view computed from only the
+     attempts dated before that day. (It can't match what the screen
+     showed then: attempts can be backdated and there's no `created_at`.)
+9. **NeetCode 150 preload** (build second): an Alembic data migration
+   inserts the 150 (number, title, link, pattern, difficulty; no
+   statements) in NeetCode order, skipping links already in the database.
+   Links go through `normalize_leetcode_link` so existing problems match.
+   Never-attempted problems leave today's queue; new material comes only
+   from branch 7.
+10. **Today's plan** (after 7): a time-boxed daily list, computed on read
+    from attempts before today (via 8), so it's the same all day; it needs
+    a "done today" check from today's attempts. Reviews first, most overdue
+    first; new problems from branch 7; a backlog line for what didn't fit.
+    Read "today" once per request and pass it to both the plan and the
+    done-today check, so a request that spans midnight can't mix two days.
+11. **Pace**: a dropdown, sent as `GET /api/plan/today?pace=` with an enum
+    (anything else is a 422; missing is steady). Stored in localStorage,
+    falling back to steady if invalid; server-side once accounts exist.
+    The numbers live in one config file:
+    light 30 min / 1 new, steady 60 / 1, intense 90 / 2. Two new a day
+    roughly doubles the review load within weeks; raise steady to 2 only
+    if its backlog stays at zero.
 
 ## Decided
 
