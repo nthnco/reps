@@ -1,14 +1,14 @@
+from datetime import date
 from typing import Annotated
 
 from fastapi import APIRouter, Depends
-from sqlalchemy import select
-from sqlalchemy.orm import Session, selectinload
+from sqlalchemy.orm import Session
 
 from app.clock import local_today
 from app.db import get_db
-from app.models import Problem
-from app.sm2 import schedule
 from app.schemas import ProblemRead, QueueItem
+from app.sm2 import schedule
+from app.snapshot import load_problems
 
 router = APIRouter(prefix="/api/queue", tags=["queue"])
 
@@ -16,10 +16,14 @@ router = APIRouter(prefix="/api/queue", tags=["queue"])
 @router.get("", response_model=list[QueueItem])
 def todays_queue(db: Annotated[Session, Depends(get_db)]) -> list[QueueItem]:
     """Problems due today or earlier, most overdue first, then never-attempted ones."""
-    today = local_today()
+    return build_queue(db)
+
+
+def build_queue(db: Session, as_of: date | None = None) -> list[QueueItem]:
+    """The queue as it stood at the start of `as_of` (default: live, as of now)."""
+    today = as_of or local_today()
     # Due dates aren't stored, so every problem's history is replayed here.
-    # selectinload fetches all attempts in one extra query instead of one per problem.
-    problems = db.scalars(select(Problem).options(selectinload(Problem.attempts)))
+    problems = load_problems(db, as_of)
 
     due: list[QueueItem] = []
     new: list[QueueItem] = []
