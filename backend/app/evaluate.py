@@ -4,6 +4,9 @@ Each problem's attempts are replayed in date order. Before every repeat attempt
 the scheduler is asked for its retention on that day, which is a prediction of
 the chance the problem gets solved; the attempt's result is the outcome. Every
 scheduler is scored on the same outcomes, so the numbers are directly comparable.
+
+Usage (from backend/): uv run python -m app.evaluate
+It reads the database in DATABASE_URL, in a read-only transaction.
 """
 
 import math
@@ -12,7 +15,12 @@ from dataclasses import dataclass
 from datetime import date
 from typing import Any, Protocol
 
+from sqlalchemy import select, text
+from sqlalchemy.orm import Session, selectinload
+
 from app import fsrs, sm2
+from app.db import SessionLocal, engine
+from app.models import Problem
 from app.scheduling import RetentionFn, UpdateFn
 
 # Below this many scored reviews the metrics are too noisy to pick a winner.
@@ -97,3 +105,37 @@ def score(preds: Sequence[Prediction]) -> Score:
         mean_predicted=sum(p.predicted for p in preds) / n,
         mean_actual=sum(outcomes) / n,
     )
+
+
+def histories(db: Session) -> list[Sequence[AttemptLike]]:
+    """Every problem's attempts. Problems never attempted contribute nothing."""
+    problems = db.scalars(select(Problem).options(selectinload(Problem.attempts)))
+    return [p.attempts for p in problems if p.attempts]  # pyright: ignore[reportReturnType]
+
+
+def report(scores: dict[str, Score]) -> str:
+    reviews = next(iter(scores.values())).reviews
+    lines = [f"Scored {reviews} repeat reviews (first attempts and same-day repeats are skipped)."]
+    if reviews < MIN_REVIEWS:
+        lines.append(f"Not enough data to pick a winner: need {MIN_REVIEWS}.")
+    if reviews:
+        lines += ["", f"{'scheduler':<10}{'log loss':>10}{'RMSE':>8}{'predicted':>11}{'actual':>8}"]
+        for name, s in scores.items():
+            lines.append(
+                f"{name:<10}{s.log_loss:>10.3f}{s.rmse:>8.3f}{s.mean_predicted:>11.2f}{s.mean_actual:>8.2f}"
+            )
+    return "\n".join(lines)
+
+
+def main() -> None:
+    # Printed first so it's obvious which data the numbers came from (Neon, local, or the demo).
+    print(f"Reading database {engine.url.database!r} on {engine.url.host} (read-only)\n")
+    with SessionLocal() as db:
+        db.execute(text("SET TRANSACTION READ ONLY"))
+        hist = histories(db)
+        scores = {s.name: score(predictions(hist, s)) for s in SCHEDULERS}
+    print(report(scores))
+
+
+if __name__ == "__main__":
+    main()

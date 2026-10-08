@@ -5,7 +5,8 @@ from datetime import date, timedelta
 import pytest
 
 from app import fsrs
-from app.evaluate import CLIP, MIN_REVIEWS, SCHEDULERS, Prediction, predictions, score
+from app.evaluate import CLIP, MIN_REVIEWS, SCHEDULERS, Prediction, histories, predictions, report, score
+from app.models import Attempt, Difficulty, Pattern, Problem
 
 DAY0 = date(2026, 10, 1)
 FSRS = next(s for s in SCHEDULERS if s.name == "FSRS")
@@ -81,3 +82,34 @@ def test_no_reviews_means_no_metrics():
 def test_enough_data_threshold():
     assert not score([Prediction(0.9, True)] * (MIN_REVIEWS - 1)).enough_data
     assert score([Prediction(0.9, True)] * MIN_REVIEWS).enough_data
+
+
+def test_histories_groups_attempts_by_problem_and_skips_unattempted(db):
+    def problem(slug: str, *days: int) -> Problem:
+        p = Problem(
+            title=slug,
+            link=f"https://leetcode.com/problems/{slug}/",
+            pattern=Pattern.STACK,
+            difficulty=Difficulty.EASY,
+        )
+        p.attempts = [
+            Attempt(attempted_on=day(d), solved=True, duration_seconds=60, confidence=3) for d in days
+        ]
+        return p
+
+    db.add_all([problem("a", 0, 4), problem("b", 1), problem("c")])
+    db.flush()
+    assert sorted(len(h) for h in histories(db)) == [1, 2]
+
+
+def test_report_shows_a_row_per_scheduler_and_warns_on_little_data():
+    s = score([Prediction(0.8, True), Prediction(0.5, False)])
+    text = report({"SM-2": s, "FSRS": s})
+    assert "Scored 2 repeat reviews" in text
+    assert f"need {MIN_REVIEWS}" in text
+    assert "SM-2" in text and "FSRS" in text and "0.65" in text
+
+
+def test_report_with_no_reviews_has_no_table():
+    text = report({"SM-2": score([]), "FSRS": score([])})
+    assert "Scored 0" in text and "log loss" not in text
