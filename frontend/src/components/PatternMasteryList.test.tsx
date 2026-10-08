@@ -27,6 +27,7 @@ function untouched(pattern: Pattern): PatternMasteryRead {
     due_count: 0,
     last_practiced_on: null,
     median_solve_seconds: null,
+    covered: false,
   }
 }
 
@@ -91,6 +92,15 @@ test('marks low-data patterns', async () => {
 
   await screen.findAllByRole('meter')
   expect(rowFor('stack')).toHaveTextContent('Low data')
+})
+
+test('marks covered patterns only', async () => {
+  getPatternMasteryMock.mockResolvedValue(rowsWith({ ...STACK, covered: true }))
+  renderWithProviders(<PatternMasteryList />)
+
+  await screen.findAllByRole('meter')
+  expect(rowFor('stack')).toHaveTextContent('Covered')
+  expect(rowFor('trees')).not.toHaveTextContent('Covered')
 })
 
 test('hides the peak marker and decay note when at peak and fresh', async () => {

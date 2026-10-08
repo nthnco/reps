@@ -1,5 +1,5 @@
 import { apiFetch } from './errors'
-import type { PatternMasteryRead, ProfileSummaryRead } from './generated'
+import type { PatternMasteryRead, ProfileSummaryRead, SuggestionRead } from './generated'
 
 // Throws on failure: TanStack Query treats a thrown error as the query's error state.
 export async function getPatternMastery(): Promise<PatternMasteryRead[]> {
@@ -16,4 +16,13 @@ export async function getProfileSummary(): Promise<ProfileSummaryRead> {
     throw new Error(`Couldn't load your profile summary (HTTP ${response.status}).`)
   }
   return (await response.json()) as ProfileSummaryRead
+}
+
+// null: every pattern is covered and nothing new is left.
+export async function getSuggestion(): Promise<SuggestionRead | null> {
+  const response = await apiFetch('/api/patterns/suggestion')
+  if (!response.ok) {
+    throw new Error(`Couldn't load what to learn next (HTTP ${response.status}).`)
+  }
+  return (await response.json()) as SuggestionRead | null
 }
