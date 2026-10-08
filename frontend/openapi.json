@@ -197,7 +197,7 @@
           "queue"
         ],
         "summary": "Todays Queue",
-        "description": "Problems due today or earlier, most overdue first, then never-attempted ones.",
+        "description": "Problems due today or earlier, most overdue first. Never-attempted ones are left out.",
         "operationId": "todays_queue_api_queue_get",
         "responses": {
           "200": {
@@ -702,15 +702,8 @@
             "$ref": "#/components/schemas/ProblemRead"
           },
           "due_on": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "date"
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "type": "string",
+            "format": "date",
             "title": "Due On"
           }
         },

@@ -274,7 +274,7 @@ export type QueueItem = {
     /**
      * Due On
      */
-    due_on: string | null;
+    due_on: string;
 };
 
 /**

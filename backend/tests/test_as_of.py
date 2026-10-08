@@ -54,6 +54,7 @@ def freeze_today(monkeypatch, day: date) -> None:
 def test_as_of_equals_live_view_of_earlier_attempts(db, history, monkeypatch):
     queue = build_queue(db, AS_OF)
     mastery = build_pattern_mastery(db, AS_OF)
+    live_queue = build_queue(db)
 
     db.execute(delete(Attempt).where(Attempt.attempted_on >= AS_OF))
     db.expire_all()
@@ -62,10 +63,8 @@ def test_as_of_equals_live_view_of_earlier_attempts(db, history, monkeypatch):
     assert build_queue(db) == queue
     assert build_pattern_mastery(db) == mastery
     # Guard against a vacuous pass: the later attempts did change the live view.
-    assert {item.problem.title for item in queue if item.due_on is None} == {
-        "never-attempted",
-        "only-after",
-    }
+    assert "only-after" in {item.problem.title for item in live_queue}
+    assert {item.problem.title for item in queue} == {"only-before"}
 
 
 def test_attempts_on_as_of_day_are_ignored(db, history):
