@@ -23,9 +23,9 @@ from app.db import SessionLocal, engine
 from app.models import Problem
 from app.scheduling import RetentionFn, UpdateFn
 
-# Below this many scored reviews the metrics are too noisy to pick a winner.
-# A judgment call, not a statistical test.
-MIN_REVIEWS = 100
+# Below this many scored reviews the winner is too likely to be noise. From
+# app.simulate's sweep: at 200, the better scheduler won 97%+ of samples.
+MIN_REVIEWS = 200
 # Keeps one confident miss (a predicted 1.0 that failed) from making log loss infinite.
 CLIP = 1e-3
 

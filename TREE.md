@@ -68,9 +68,15 @@ queue shows what's due
   each repeat attempt, a scheduler's retention that day is its prediction;
   the outcome is "recalled" = solved, with or without a hint. First attempts
   and same-day repeats aren't scored. Reports log loss, RMSE, and mean
-  predicted vs actual; under 100 scored reviews it says there's not enough
-  data (a judgment call). Run it against real history only: the demo's data
-  is generated, so scoring it measures the seed script.
+  predicted vs actual; under 200 scored reviews it says there's not enough
+  data. Run it against real history only: the demo's data is generated, so
+  scoring it measures the seed script.
+  - The 200 comes from a simulated learner (`uv run python -m app.simulate`):
+    true recall follows FSRS's curve with stability scaled 0.25-2x, reviews
+    land on SM-2 due dates plus ~2 days' lateness. The better scheduler wins
+    ~95% of 100-review samples and 97%+ at 200. That's the best case: the
+    truth is FSRS-shaped, so the gap between the two is wide. If real data
+    has a narrower gap, 200 is too few.
 - **Pattern mastery**: computed on read from all attempts (nothing stored), so
   backdated attempts replay in order. All numbers live in `mastery_config.py`.
   - Score per attempt: clean solve 0.5 easy / 0.9 medium / 1.0 hard; hint or
