@@ -52,6 +52,31 @@ queue shows what's due
   exposes `update(state, rating, now)` and `retention(state, now)`, typed by
   `scheduling.py`, and owns its state type. SM-2's retention is an
   approximation: `0.9 ** (days since review / max(interval, 7))`.
+- **FSRS** (`fsrs.py`): FSRS-6, written by hand on calendar dates, matching
+  py-fsrs 6.3.2 (no learning steps, no fuzzing) to float precision. Starts on
+  the published default parameters, aiming for 90% recall on the due date.
+  - Ratings: failed is Again; hint or confidence 1-2 is Hard; 3 is Good; 4-5
+    is Easy. Any solve, even with a hint, counts as a recall.
+  - Same-day repeats use FSRS's short-term rule and barely move stability.
+  - Versus SM-2: a first confident solve (4-5) is due in 8 days, not 1; two
+    Good reviews reach ~11 days. Retention is a power curve with a long tail
+    (10-day stability still predicts ~50% recall after 1,000 days), where
+    SM-2's approximation falls towards 0.
+  - Mastery follows whichever scheduler is active, so under FSRS patterns fade
+    more slowly and "Needs review" shows up less often.
+- **Scheduler evaluation** (`uv run python -m app.evaluate`, read-only): before
+  each repeat attempt, a scheduler's retention that day is its prediction;
+  the outcome is "recalled" = solved, with or without a hint. First attempts
+  and same-day repeats aren't scored. Reports log loss, RMSE, and mean
+  predicted vs actual; under 200 scored reviews it says there's not enough
+  data. Run it against real history only: the demo's data is generated, so
+  scoring it measures the seed script.
+  - The 200 comes from a simulated learner (`uv run python -m app.simulate`):
+    true recall follows FSRS's curve with stability scaled 0.25-2x, reviews
+    land on SM-2 due dates plus ~2 days' lateness. The better scheduler wins
+    ~95% of 100-review samples and 97%+ at 200. That's the best case: the
+    truth is FSRS-shaped, so the gap between the two is wide. If real data
+    has a narrower gap, 200 is too few.
 - **Pattern mastery**: computed on read from all attempts (nothing stored), so
   backdated attempts replay in order. All numbers live in `mastery_config.py`.
   - Score per attempt: clean solve 0.5 easy / 0.9 medium / 1.0 hard; hint or
