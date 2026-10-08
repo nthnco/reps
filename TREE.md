@@ -29,6 +29,19 @@ queue shows what's due
 5. **Company readiness**: framed as coverage of the patterns a company's
    questions lean on; only once the data supports it
 6. **Accounts and a shareable demo**
+7. **Next-pattern suggestion**: point at the earliest pattern, in roadmap
+   order (`PATTERN_LABELS`), that isn't covered yet. A nudge, not a gate.
+   - Why not gate tiers on mastery: interviews test spotting the pattern,
+     which mixed practice (the queue) trains and blocked practice doesn't;
+     FAANG rounds are mostly mediums, so clearing all easies first is slow;
+     and easies alone can't reach "mastered", so a mastery gate would never
+     open. Roadmap order still matters for prerequisites (trees before
+     graphs, backtracking before DP).
+   - Intended flow: a breadth pass (1-2 easies, then 2-3 mediums per
+     pattern), then depth through the mixed queue, then hards and timed
+     practice.
+   - Open: what "covered" means. Proposed: 2 solved mediums, hints allowed,
+     independent of the mastery score.
 
 ## Decided
 
