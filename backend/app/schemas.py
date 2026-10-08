@@ -62,6 +62,7 @@ class ProblemRead(BaseModel):
     pattern: Pattern
     difficulty: Difficulty
     notes: str
+    is_premium: bool
 
 
 def _not_in_future(day: date) -> date:

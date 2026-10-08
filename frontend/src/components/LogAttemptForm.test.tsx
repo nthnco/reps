@@ -19,6 +19,7 @@ const TWO_SUM: ProblemRead = {
   pattern: 'arrays_hashing',
   difficulty: 'easy',
   notes: '',
+  is_premium: false,
 }
 const COIN_CHANGE: ProblemRead = {
   id: 9,
@@ -27,6 +28,7 @@ const COIN_CHANGE: ProblemRead = {
   pattern: 'dp_1d',
   difficulty: 'medium',
   notes: '',
+  is_premium: false,
 }
 
 beforeEach(() => {

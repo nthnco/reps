@@ -11,6 +11,7 @@ from sqlalchemy import (
     SmallInteger,
     String,
     Text,
+    false,
 )
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
@@ -81,6 +82,7 @@ class Problem(Base):
         _string_enum(Difficulty, "difficulty")
     )
     notes: Mapped[str] = mapped_column(Text, default="", server_default="")
+    is_premium: Mapped[bool] = mapped_column(default=False, server_default=false())
 
     attempts: Mapped[list["Attempt"]] = relationship(
         back_populates="problem", cascade="all, delete-orphan"

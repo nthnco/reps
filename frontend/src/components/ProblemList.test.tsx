@@ -15,7 +15,7 @@ function problem(
   pattern: ProblemRead['pattern'],
   difficulty: ProblemRead['difficulty'],
 ): ProblemRead {
-  return { id, title, link: `https://leetcode.com/problems/${id}/`, pattern, difficulty, notes: '' }
+  return { id, title, link: `https://leetcode.com/problems/${id}/`, pattern, difficulty, notes: '', is_premium: false }
 }
 
 beforeEach(() => {

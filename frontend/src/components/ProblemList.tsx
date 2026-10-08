@@ -3,6 +3,7 @@ import type { Difficulty, Pattern, ProblemRead } from '../api/generated'
 import { PATTERN_LABELS } from '../api/labels'
 import { useProblems } from '../api/queries'
 import { DifficultyBadge } from './DifficultyBadge'
+import { PremiumBadge } from './PremiumBadge'
 
 const DIFFICULTY_ORDER: Record<Difficulty, number> = { easy: 0, medium: 1, hard: 2 }
 
@@ -57,7 +58,10 @@ export function ProblemList() {
                     >
                       {problem.title}
                     </Link>
-                    <DifficultyBadge difficulty={problem.difficulty} />
+                    <span className="flex shrink-0 items-center gap-2">
+                      {problem.is_premium && <PremiumBadge />}
+                      <DifficultyBadge difficulty={problem.difficulty} />
+                    </span>
                   </li>
                 ))}
               </ul>
