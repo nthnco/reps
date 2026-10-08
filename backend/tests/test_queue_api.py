@@ -34,10 +34,10 @@ def test_empty_queue(client):
     assert queue(client) == []
 
 
-def test_never_attempted_problem_is_new(client):
+def test_never_attempted_problem_is_not_queued(client):
     add_problem(client, "A")
 
-    assert queue(client) == [("A", None)]
+    assert queue(client) == []
 
 
 def test_problem_due_today_is_included(client):
@@ -63,18 +63,18 @@ def test_replays_full_history_not_just_last_attempt(client):
     assert queue(client) == [("A", local_today().isoformat())]
 
 
-def test_most_overdue_first_then_new(client):
-    add_problem(client, "New")
+def test_most_overdue_first(client):
     log(client, add_problem(client, "Today"), days_ago=1)  # due today
     log(client, add_problem(client, "Overdue"), days_ago=10)  # due 9 days ago
 
     titles = [title for title, _ in queue(client)]
 
-    assert titles == ["Overdue", "Today", "New"]
+    assert titles == ["Overdue", "Today"]
 
 
 def test_ties_break_by_title(client):
-    add_problem(client, "Zebra")
-    add_problem(client, "Apple")
+    log(client, add_problem(client, "Zebra"), days_ago=1)
+    log(client, add_problem(client, "Apple"), days_ago=1)
 
-    assert queue(client) == [("Apple", None), ("Zebra", None)]
+    today = local_today().isoformat()
+    assert queue(client) == [("Apple", today), ("Zebra", today)]

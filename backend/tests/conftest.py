@@ -49,6 +49,9 @@ def db(migrated_db: None):
     """A session whose changes are rolled back after each test."""
     with engine.connect() as conn:
         transaction = conn.begin()
+        # Start empty: the NeetCode preload migration fills the table. The
+        # rollback below restores it for the next test.
+        conn.execute(text("DELETE FROM problems"))
         session = Session(bind=conn, join_transaction_mode="create_savepoint")
         yield session
         session.close()

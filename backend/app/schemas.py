@@ -94,7 +94,7 @@ class AttemptRead(BaseModel):
 
 class QueueItem(BaseModel):
     problem: ProblemRead
-    due_on: date | None  # None: never attempted
+    due_on: date
 
 
 class PatternMasteryRead(BaseModel):

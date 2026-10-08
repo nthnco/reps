@@ -45,7 +45,7 @@ function fakeBackend({ gated = false } = {}) {
       case 'GET /api/problems':
         return json([TWO_SUM])
       case 'GET /api/queue':
-        return json(attempted ? [] : [{ problem: TWO_SUM, due_on: null }])
+        return json(attempted ? [] : [{ problem: TWO_SUM, due_on: '2026-10-03' }])
       case 'POST /api/problems/7/attempts':
         attempted = true
         return json({ id: 1, problem_id: 7, ...JSON.parse(init!.body as string) }, 201)

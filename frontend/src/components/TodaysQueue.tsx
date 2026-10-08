@@ -5,10 +5,9 @@ import { useTodaysQueue } from '../api/queries'
 import { formatDueDate } from '../dates'
 import { DifficultyBadge } from './DifficultyBadge'
 
-// How many of each list to show. Finishing one brings in the next; the rest are
+// How many reviews to show. Finishing one brings in the next; the rest are
 // still due, just hidden, so a backlog shows up in the "more" line.
 export const REVIEW_LIMIT = 10
-export const NEW_LIMIT = 5
 
 export function TodaysQueue() {
   const queue = useTodaysQueue()
@@ -26,18 +25,7 @@ export function TodaysQueue() {
       ) : queue.data.length === 0 ? (
         <p>Nothing due today.</p>
       ) : (
-        <>
-          <QueueList
-            title="Reviews"
-            items={queue.data.filter((item) => item.due_on !== null)}
-            limit={REVIEW_LIMIT}
-          />
-          <QueueList
-            title="New"
-            items={queue.data.filter((item) => item.due_on === null)}
-            limit={NEW_LIMIT}
-          />
-        </>
+        <QueueList title="Reviews" items={queue.data} limit={REVIEW_LIMIT} />
       )}
     </section>
   )
@@ -69,7 +57,7 @@ function QueueList({ title, items, limit }: { title: string; items: QueueItem[];
               </p>
             </div>
             <span className="shrink-0 text-sm text-gray-600 dark:text-gray-400">
-              {due_on === null ? 'New' : `Due ${formatDueDate(due_on)}`}
+              Due {formatDueDate(due_on)}
             </span>
           </li>
         ))}
