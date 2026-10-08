@@ -11,8 +11,7 @@ from datetime import date
 from typing import Annotated
 
 from fastapi import APIRouter, Depends
-from sqlalchemy import select
-from sqlalchemy.orm import Session, selectinload
+from sqlalchemy.orm import Session
 
 from app import mastery_config as cfg
 from app.clock import local_today
@@ -25,18 +24,15 @@ from app.mastery import (
     profile_summary,
     total_completed,
 )
-from app.models import Pattern, Problem
+from app.models import Pattern
 from app.schemas import MasteryRulesRead, PatternMasteryRead, ProfileSummaryRead
 from app.sm2 import ReviewState, retention, schedule
+from app.snapshot import ProblemSnapshot, load_problems
 
 router = APIRouter(prefix="/api", tags=["mastery"])
 
 
-def _load_problems(db: Session) -> list[Problem]:
-    return list(db.scalars(select(Problem).options(selectinload(Problem.attempts))))
-
-
-def _states_by_pattern(problems: list[Problem]) -> dict[Pattern, list[ReviewState]]:
+def _states_by_pattern(problems: list[ProblemSnapshot]) -> dict[Pattern, list[ReviewState]]:
     """Scheduler state of every attempted problem, grouped by pattern."""
     states: dict[Pattern, list[ReviewState]] = {p: [] for p in Pattern}
     for problem in problems:
@@ -59,8 +55,13 @@ def _displayed(
 @router.get("/patterns/mastery", response_model=list[PatternMasteryRead])
 def get_pattern_mastery(db: Annotated[Session, Depends(get_db)]) -> list[PatternMasteryRead]:
     """One row per pattern, in the fixed pattern order, including untouched ones."""
-    today = local_today()
-    problems = _load_problems(db)
+    return build_pattern_mastery(db)
+
+
+def build_pattern_mastery(db: Session, as_of: date | None = None) -> list[PatternMasteryRead]:
+    """Mastery as it stood at the start of `as_of` (default: live, as of now)."""
+    today = as_of or local_today()
+    problems = load_problems(db, as_of)
     rows = pattern_mastery(problems)  # pyright: ignore[reportArgumentType]
     states = _states_by_pattern(problems)
     displayed = _displayed(rows, states, today)
@@ -90,7 +91,7 @@ def get_pattern_mastery(db: Annotated[Session, Depends(get_db)]) -> list[Pattern
 @router.get("/profile/summary", response_model=ProfileSummaryRead)
 def get_profile_summary(db: Annotated[Session, Depends(get_db)]) -> ProfileSummaryRead:
     today = local_today()
-    problems = _load_problems(db)
+    problems = load_problems(db)
     rows = pattern_mastery(problems)  # pyright: ignore[reportArgumentType]
     displayed = _displayed(rows, _states_by_pattern(problems), today)
     completed = total_completed(problems)  # pyright: ignore[reportArgumentType]
