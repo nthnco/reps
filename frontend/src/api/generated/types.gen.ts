@@ -126,7 +126,7 @@ export type Me = {
 /**
  * Pattern
  */
-export type Pattern = 'arrays_hashing' | 'two_pointers' | 'sliding_window' | 'stack' | 'binary_search' | 'linked_list' | 'trees' | 'tries' | 'heap' | 'backtracking' | 'graphs' | 'advanced_graphs' | 'dp_1d' | 'dp_2d' | 'greedy' | 'intervals' | 'math_geometry' | 'bit_manipulation';
+export type Pattern = 'arrays_hashing' | 'two_pointers' | 'sliding_window' | 'stack' | 'binary_search' | 'linked_list' | 'trees' | 'tries' | 'heap' | 'greedy' | 'intervals' | 'backtracking' | 'graphs' | 'advanced_graphs' | 'dp_1d' | 'dp_2d' | 'math_geometry' | 'bit_manipulation';
 
 /**
  * PatternMasteryRead
