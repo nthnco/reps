@@ -4,10 +4,12 @@ A spaced-repetition tracker for LeetCode practice.
 
 Log the problems you solve and each attempt at them. A scheduler decides when
 you should revisit each problem based on how it went, and a "today's queue"
-shows what's due. Reps stores only metadata and your own notes (number,
-title, link, pattern, difficulty), never problem statements.
+shows what's due. Reps stores only metadata and your own notes (title, link,
+pattern, difficulty), never problem statements.
 
-> Status: scaffold only. No features are implemented yet.
+**Live demo: https://reps-demo.onrender.com.** No sign-up. You get a private
+copy of eight weeks of sample practice to click around in; your changes are
+visible only to you and reset after an hour.
 
 ## Stack
 
