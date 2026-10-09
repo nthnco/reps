@@ -6,7 +6,8 @@ from starlette.exceptions import HTTPException
 from starlette.middleware.sessions import SessionMiddleware
 from starlette.types import Scope
 
-from app import auth
+from app import auth, demo
+from app.db import get_db
 from app.routes import mastery, plan, problems
 
 THIRTY_DAYS = 30 * 24 * 60 * 60
@@ -31,14 +32,18 @@ class SinglePageApp(StaticFiles):
 
 app = FastAPI(title="Reps API")
 app.state.auth = auth.load_auth_config()
+app.state.demo = demo.load_demo_config()
 app.add_middleware(
     SessionMiddleware,
-    # With the gate off nothing meaningful is stored, so any key will do.
-    secret_key=app.state.auth.secret_key or "dev-only-not-secret",
+    # With the gate and demo off nothing meaningful is stored, so any key will do.
+    secret_key=app.state.auth.secret_key or app.state.demo.secret_key or "dev-only-not-secret",
     max_age=THIRTY_DAYS,
     same_site="lax",
     https_only=app.state.auth.required,
 )
+
+if app.state.demo.enabled:
+    app.dependency_overrides[get_db] = demo.get_workspace_db
 
 app.include_router(auth.router)
 login_required = [Depends(auth.require_login)]
