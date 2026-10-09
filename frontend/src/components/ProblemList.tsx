@@ -2,7 +2,8 @@ import { useState } from 'react'
 import { Link } from 'react-router'
 import type { Difficulty, Pattern, PatternMasteryRead, ProblemRead } from '../api/generated'
 import { PATTERN_LABELS, STAGES } from '../api/labels'
-import { usePatternMastery, useProblems } from '../api/queries'
+import { usePatternMastery, useProblems, useTodaysPlan } from '../api/queries'
+import { toPercent } from '../format'
 import { DifficultyBadge } from './DifficultyBadge'
 import { PremiumBadge } from './PremiumBadge'
 
@@ -22,9 +23,17 @@ function problemsIn(problems: ProblemRead[], pattern: Pattern): ProblemRead[] {
 export function ProblemList() {
   const problems = useProblems()
   const mastery = usePatternMastery()
+  // Today's plan's suggestion, not the live one, so "Next" matches the plan all day.
+  const plan = useTodaysPlan()
   const [open, setOpen] = useState<Pattern | null>(null)
 
   const rows = new Map(mastery.data?.map((row) => [row.pattern, row]))
+  const next = plan.data?.suggestion?.pattern ?? null
+  const coveredCounts = STAGES.map(
+    (stage) => stage.patterns.filter((p) => rows.get(p)?.covered).length,
+  )
+  // Stages after the first one with nothing covered are dimmed (still clickable).
+  const firstGap = coveredCounts.indexOf(0)
 
   return (
     <section className="space-y-6">
@@ -39,22 +48,26 @@ export function ProblemList() {
       ) : problems.data.length === 0 ? (
         <p>No problems yet. Use "Add problem" to add one.</p>
       ) : (
-        STAGES.map((stage) => {
-          const coveredCount = stage.patterns.filter((p) => rows.get(p)?.covered).length
+        STAGES.map((stage, i) => {
+          const dimmed = firstGap !== -1 && i > firstGap
           return (
             <section key={stage.label} aria-label={stage.label} className="space-y-2">
               <h3 className="text-sm font-semibold tracking-wide text-gray-600 uppercase dark:text-gray-400">
                 {stage.label}
                 <span className="ml-2 font-normal tracking-normal normal-case">
-                  {coveredCount} of {stage.patterns.length} covered
+                  {coveredCounts[i]} of {stage.patterns.length} covered
+                  {dimmed && ` · Suggested after ${STAGES[firstGap].label}`}
                 </span>
               </h3>
-              <div className="grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-2">
+              <div
+                className={`grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-2 ${dimmed ? 'opacity-50' : ''}`}
+              >
                 {stage.patterns.map((pattern) => (
                   <PatternCard
                     key={pattern}
                     pattern={pattern}
                     row={rows.get(pattern)}
+                    isNext={next === pattern}
                     isOpen={open === pattern}
                     onToggle={() => setOpen(open === pattern ? null : pattern)}
                   />
@@ -74,11 +87,13 @@ export function ProblemList() {
 function PatternCard({
   pattern,
   row,
+  isNext,
   isOpen,
   onToggle,
 }: {
   pattern: Pattern
   row: PatternMasteryRead | undefined
+  isNext: boolean
   isOpen: boolean
   onToggle: () => void
 }) {
@@ -88,17 +103,52 @@ function PatternCard({
       aria-expanded={isOpen}
       aria-controls={`panel-${pattern}`}
       onClick={onToggle}
-      className={`flex items-center justify-between rounded border p-3 text-left font-medium hover:bg-gray-50 dark:hover:bg-gray-800 ${
-        isOpen ? 'border-blue-600 dark:border-blue-400' : 'border-gray-200 dark:border-gray-700'
-      }`}
+      className={`space-y-1 rounded border p-3 text-left hover:bg-gray-50 dark:hover:bg-gray-800 ${
+        isOpen
+          ? 'border-gray-500 bg-gray-50 dark:border-gray-400 dark:bg-gray-800'
+          : 'border-gray-200 dark:border-gray-700'
+      } ${isNext ? 'ring-2 ring-blue-500' : ''}`}
     >
-      {PATTERN_LABELS[pattern]}
-      {row?.covered && (
-        <span aria-label="Covered" className="text-green-700 dark:text-green-400">
-          ✓
+      <span className="flex items-baseline justify-between gap-2">
+        <span className="font-medium">{PATTERN_LABELS[pattern]}</span>
+        <span className="text-sm text-gray-600 tabular-nums dark:text-gray-400">
+          <span className="sr-only">Mastery </span>
+          {!row || row.low_data ? '–' : toPercent(row.displayed_mastery)}
         </span>
-      )}
+      </span>
+      <span className="flex items-center justify-between gap-2 text-sm">
+        {row && <TierCounts row={row} />}
+        {isNext && (
+          <span className="rounded bg-blue-600 px-1.5 text-xs font-semibold text-white">Next</span>
+        )}
+        {row?.covered && (
+          <span className="text-green-700 dark:text-green-400">
+            <span aria-hidden="true">✓</span>
+            <span className="sr-only">Covered</span>
+          </span>
+        )}
+      </span>
     </button>
+  )
+}
+
+const TIERS: [Difficulty, string][] = [
+  ['easy', 'E'],
+  ['medium', 'M'],
+  ['hard', 'H'],
+]
+
+/** "E 1/1 · M 1/4 · H 0/1"; a tier the pattern has no problems in is muted. */
+function TierCounts({ row }: { row: PatternMasteryRead }) {
+  return (
+    <span className="text-gray-700 tabular-nums dark:text-gray-300">
+      {TIERS.map(([tier, letter], i) => (
+        <span key={tier} className={row.total_by_tier[tier] === 0 ? 'text-gray-400 dark:text-gray-600' : ''}>
+          {i > 0 && ' · '}
+          {letter} {row.solved_by_tier[tier]}/{row.total_by_tier[tier]}
+        </span>
+      ))}
+    </span>
   )
 }
 

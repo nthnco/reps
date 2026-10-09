@@ -1,9 +1,10 @@
 import { screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, expect, test, vi } from 'vitest'
-import type { Pattern, ProblemRead } from '../api/generated'
+import type { Pattern, PlanRead, ProblemRead } from '../api/generated'
 import { PATTERN_LABELS } from '../api/labels'
 import { getPatternMastery } from '../api/mastery'
+import { getTodaysPlan } from '../api/plan'
 import { listProblems } from '../api/problems'
 import { untouched } from '../test/mastery'
 import { renderWithProviders } from '../test/render'
@@ -11,8 +12,20 @@ import { ProblemList } from './ProblemList'
 
 vi.mock('../api/problems', () => ({ listProblems: vi.fn() }))
 vi.mock('../api/mastery', () => ({ getPatternMastery: vi.fn() }))
+vi.mock('../api/plan', () => ({ getTodaysPlan: vi.fn() }))
 const listProblemsMock = vi.mocked(listProblems)
 const getPatternMasteryMock = vi.mocked(getPatternMastery)
+const getTodaysPlanMock = vi.mocked(getTodaysPlan)
+
+function planSuggesting(pattern: Pattern | null): PlanRead {
+  return {
+    today: '2026-10-08',
+    budget_seconds: 3600,
+    items: [],
+    backlog: [],
+    suggestion: pattern && { pattern, problem: null, reason: 'keep_reviewing' },
+  }
+}
 
 function problem(
   id: number,
@@ -34,6 +47,53 @@ beforeEach(() => {
   listProblemsMock.mockReset()
   getPatternMasteryMock.mockReset()
   getPatternMasteryMock.mockResolvedValue(masteryWithCovered())
+  getTodaysPlanMock.mockReset()
+  getTodaysPlanMock.mockResolvedValue(planSuggesting(null))
+})
+
+test('a card shows mastery (a dash on low data) and solved / total per tier', async () => {
+  listProblemsMock.mockResolvedValue([problem(1, 'Two Sum', 'arrays_hashing', 'easy')])
+  getPatternMasteryMock.mockResolvedValue(
+    masteryWithCovered().map((row) =>
+      row.pattern === 'arrays_hashing'
+        ? {
+            ...row,
+            low_data: false,
+            displayed_mastery: 0.724,
+            solved_by_tier: { easy: 3, medium: 2, hard: 0 },
+            total_by_tier: { easy: 3, medium: 6, hard: 0 },
+          }
+        : row,
+    ),
+  )
+  renderWithProviders(<ProblemList />)
+
+  const arrays = await screen.findByRole('button', { name: /Arrays & Hashing/ })
+  expect(arrays).toHaveTextContent('Mastery 72')
+  expect(arrays).toHaveTextContent('E 3/3 · M 2/6 · H 0/0')
+  expect(screen.getByRole('button', { name: /Two Pointers/ })).toHaveTextContent('Mastery –')
+})
+
+test("'Next' marks the pattern today's plan suggests", async () => {
+  listProblemsMock.mockResolvedValue([problem(1, 'Two Sum', 'arrays_hashing', 'easy')])
+  getTodaysPlanMock.mockResolvedValue(planSuggesting('stack'))
+  renderWithProviders(<ProblemList />)
+
+  expect(await screen.findByRole('button', { name: /Stack.*Next/ })).toBeInTheDocument()
+  expect(screen.getAllByText('Next')).toHaveLength(1)
+})
+
+test('stages after the first one with nothing covered are dimmed and say why', async () => {
+  listProblemsMock.mockResolvedValue([problem(1, 'Two Sum', 'arrays_hashing', 'easy')])
+  getPatternMasteryMock.mockResolvedValue(masteryWithCovered('arrays_hashing', 'backtracking'))
+  renderWithProviders(<ProblemList />)
+
+  const heading = async (stage: string) =>
+    within(await screen.findByRole('region', { name: stage })).getByRole('heading')
+  expect(await heading('Lists and trees')).not.toHaveTextContent('Suggested after')
+  // Covering a later pattern out of order doesn't undim its stage.
+  expect(await heading('Search')).toHaveTextContent('Suggested after Lists and trees')
+  expect(await heading('Extras')).toHaveTextContent('Suggested after Lists and trees')
 })
 
 test('groups patterns into stages, each counting its covered patterns', async () => {
