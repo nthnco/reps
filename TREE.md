@@ -211,8 +211,24 @@ Build next, in this order: 8, 9, 7, 10, 11. The rest wait.
   Free Render services sleep after 15 minutes idle (~1 min cold start);
   upgrade the demo service once its link is shared.
 - **Deploy plan**: (1) deploy plumbing, (2) password gate, then the private
-  instance goes live, (3) demo mode: a second instance with writes blocked
-  and seeded data dated relative to today, re-seeded daily.
+  instance goes live, (3) demo mode (below).
+- **Demo** (`app/demo.py`, `reps-demo` in `render.yaml`): a second instance,
+  `DEMO_MODE=true`, its own database, no login. Writable per visitor (the
+  user's call over read-only, so recruiters can try the trunk).
+  - Each visitor gets a Postgres schema `demo_<id>`, named in the signed
+    session cookie; `get_db` is swapped for one that maps every table to it
+    (`schema_translate_map`). Routes must take their session from `get_db`,
+    or they'd read the demo database's `public` tables instead.
+  - New workspaces copy `demo_template`: `public.problems` (so data
+    migrations carry over) plus 8 weeks of attempts from a seeded learner
+    who follows the real `build_plan` (`app/demo_history.py`), ending
+    yesterday. Rebuilt daily and on every restart.
+  - Meant for a few minutes' look: a workspace lives 1 hour from creation,
+    at most 50 exist (oldest evicted), and each takes 10 new problems and 30
+    new attempts (counted on flush, so new routes are covered). Cleanup
+    runs when a workspace is created; no background job.
+  - Tables come from the models (`create_all`), not Alembic. A new column
+    needs nothing; a new writable table needs a limit.
 
 ## Open decisions
 
