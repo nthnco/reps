@@ -7,7 +7,7 @@ from sqlalchemy import text
 from app import demo as demo_module
 from app.clock import local_today
 from app.db import engine, get_db
-from app.demo import get_workspace_db, load_demo_config, setup_registry
+from app.demo import DemoConfig, get_workspace_db, load_demo_config, setup_registry
 from app.demo_history import DAYS
 from app.main import app
 
@@ -38,10 +38,13 @@ def demo_registry(migrated_db):
 
 @pytest.fixture
 def demo(demo_registry):
-    """Demo routing on. Workspaces commit for real, so drop them afterwards."""
+    """Demo mode on. Workspaces commit for real, so drop them afterwards."""
+    original = app.state.demo
+    app.state.demo = DemoConfig(enabled=True, secret_key="unused-in-tests")
     app.dependency_overrides[get_db] = get_workspace_db
     yield
     app.dependency_overrides.clear()
+    app.state.demo = original
     with engine.begin() as conn:
         for schema in conn.scalars(text("SELECT schema_name FROM demo_meta.workspaces")).all():
             conn.execute(text(f'DROP SCHEMA IF EXISTS "{schema}" CASCADE'))
@@ -79,6 +82,22 @@ def test_workspace_starts_over_after_its_lifetime(demo):
         conn.execute(text("UPDATE demo_meta.workspaces SET created_at = now() - interval '61 minutes'"))
 
     assert "demo-test-problem" not in titles(visitor)
+
+
+def test_reset_starts_the_visitor_over(demo):
+    visitor = TestClient(app)
+    assert visitor.get("/api/auth/me").json() == {"username": None, "demo": True}
+    visitor.post("/api/problems", json=NEW)
+
+    assert visitor.post("/api/demo/reset").status_code == 204
+
+    assert "demo-test-problem" not in titles(visitor)
+    with engine.connect() as conn:
+        assert conn.scalar(text("SELECT count(*) FROM demo_meta.workspaces")) == 1
+
+
+def test_reset_is_not_found_outside_demo_mode(client):
+    assert client.post("/api/demo/reset").status_code == 404
 
 
 def test_oldest_workspace_is_dropped_to_make_room(demo, monkeypatch):

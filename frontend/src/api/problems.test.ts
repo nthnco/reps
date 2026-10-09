@@ -79,6 +79,18 @@ test('maps a 422 to per-field errors', async () => {
   })
 })
 
+test('shows the server’s message for a 403 (the demo’s limit)', async () => {
+  mockFetch(403, { detail: 'The demo allows up to 10 new problems. It resets after an hour.' })
+
+  const result = await createProblem(BODY)
+
+  expect(result).toEqual({
+    ok: false,
+    message: 'The demo allows up to 10 new problems. It resets after an hour.',
+    fieldErrors: {},
+  })
+})
+
 test('reports other HTTP errors generically', async () => {
   mockFetch(500, { detail: 'Internal Server Error' })
 

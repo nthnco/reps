@@ -23,7 +23,7 @@ import secrets
 from dataclasses import dataclass
 from datetime import timedelta
 
-from fastapi import Request
+from fastapi import APIRouter, HTTPException, Request, status
 from sqlalchemy import Connection, Table, event, func, select, text
 from sqlalchemy.orm import Session
 
@@ -110,8 +110,13 @@ def workspace_schema(request: Request) -> str:
     """This visitor's schema name, assigning a new one on their first request."""
     schema = request.session.get(WORKSPACE_KEY)
     if not isinstance(schema, str) or not _SCHEMA_NAME.fullmatch(schema):
-        schema = f"demo_{secrets.token_hex(8)}"
-        request.session[WORKSPACE_KEY] = schema
+        schema = _assign_new_workspace(request)
+    return schema
+
+
+def _assign_new_workspace(request: Request) -> str:
+    schema = f"demo_{secrets.token_hex(8)}"
+    request.session[WORKSPACE_KEY] = schema
     return schema
 
 
@@ -263,3 +268,19 @@ def get_workspace_db(request: Request):
     with Session(bind) as session:
         _enforce_limits(session, baseline)
         yield session
+
+
+router = APIRouter(prefix="/api/demo", tags=["demo"])
+
+
+@router.post("/reset", status_code=status.HTTP_204_NO_CONTENT)
+def reset(request: Request) -> None:
+    """Start the visitor over with a fresh copy of the sample data."""
+    if not request.app.state.demo.enabled:
+        raise HTTPException(status.HTTP_404_NOT_FOUND)
+    old = workspace_schema(request)
+    _assign_new_workspace(request)
+    # Drop the old copy now rather than leaving it to expire.
+    with engine.begin() as conn:
+        conn.execute(text("SELECT pg_advisory_xact_lock(:key)"), {"key": _CREATE_LOCK})
+        _drop(conn, [old])

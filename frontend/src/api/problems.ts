@@ -36,6 +36,11 @@ export async function createProblem(body: ProblemCreate): Promise<CreateProblemR
     const { detail } = (await response.json()) as { detail: string }
     return { ok: false, message: detail, fieldErrors: { link: detail } }
   }
+  if (response.status === 403) {
+    // The demo's limit on new problems; the server words it.
+    const { detail } = (await response.json()) as { detail: string }
+    return { ok: false, message: detail, fieldErrors: {} }
+  }
 
   if (response.status === 422) {
     const fieldErrors = await readFieldErrors<ProblemCreate>(response)

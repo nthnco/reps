@@ -121,6 +121,10 @@ export type Me = {
      * Username
      */
     username: string | null;
+    /**
+     * Demo
+     */
+    demo: boolean;
 };
 
 /**
@@ -453,6 +457,22 @@ export type MeApiAuthMeGetResponses = {
 };
 
 export type MeApiAuthMeGetResponse = MeApiAuthMeGetResponses[keyof MeApiAuthMeGetResponses];
+
+export type ResetApiDemoResetPostData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/demo/reset';
+};
+
+export type ResetApiDemoResetPostResponses = {
+    /**
+     * Successful Response
+     */
+    204: void;
+};
+
+export type ResetApiDemoResetPostResponse = ResetApiDemoResetPostResponses[keyof ResetApiDemoResetPostResponses];
 
 export type ListProblemsApiProblemsGetData = {
     body?: never;

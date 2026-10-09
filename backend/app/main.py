@@ -60,6 +60,7 @@ def demo_limit_reached(request: Request, exc: demo.DemoLimitReached) -> JSONResp
     return JSONResponse({"detail": str(exc)}, status_code=403)
 
 app.include_router(auth.router)
+app.include_router(demo.router)
 login_required = [Depends(auth.require_login)]
 app.include_router(problems.router, dependencies=login_required)
 app.include_router(mastery.router, dependencies=login_required)
