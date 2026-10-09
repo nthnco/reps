@@ -1,6 +1,8 @@
 import os
+from contextlib import asynccontextmanager
 
-from fastapi import Depends, FastAPI
+from fastapi import Depends, FastAPI, Request
+from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.exceptions import HTTPException
 from starlette.middleware.sessions import SessionMiddleware
@@ -30,7 +32,14 @@ class SinglePageApp(StaticFiles):
                 raise
             return await super().get_response("index.html", scope)
 
-app = FastAPI(title="Reps API")
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    if app.state.demo.enabled:
+        demo.setup_registry()
+    yield
+
+
+app = FastAPI(title="Reps API", lifespan=lifespan)
 app.state.auth = auth.load_auth_config()
 app.state.demo = demo.load_demo_config()
 app.add_middleware(
@@ -44,6 +53,11 @@ app.add_middleware(
 
 if app.state.demo.enabled:
     app.dependency_overrides[get_db] = demo.get_workspace_db
+
+
+@app.exception_handler(demo.DemoLimitReached)
+def demo_limit_reached(request: Request, exc: demo.DemoLimitReached) -> JSONResponse:
+    return JSONResponse({"detail": str(exc)}, status_code=403)
 
 app.include_router(auth.router)
 login_required = [Depends(auth.require_login)]
