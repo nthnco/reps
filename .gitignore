@@ -22,3 +22,6 @@ dist/
 .vscode/
 .idea/
 .DS_Store
+
+# Per-session handoff notes (local only)
+HANDOFF.md
