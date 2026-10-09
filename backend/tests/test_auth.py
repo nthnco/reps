@@ -26,7 +26,7 @@ def login(client, username="nathan", password="correct horse"):
 
 def test_gated_routes_reject_anonymous_requests(gated):
     assert gated.get("/api/problems").status_code == 401
-    assert gated.get("/api/queue").status_code == 401
+    assert gated.get("/api/plan/today").status_code == 401
     assert gated.get("/api/patterns/mastery").status_code == 401
     assert gated.get("/api/profile/summary").status_code == 401
     assert gated.post("/api/problems", json={}).status_code == 401
@@ -43,20 +43,20 @@ def test_health_stays_open_for_the_host_health_check(gated):
 )
 def test_bad_credentials_are_rejected(gated, username, password):
     assert login(gated, username, password).status_code == 401
-    assert gated.get("/api/queue").status_code == 401
+    assert gated.get("/api/plan/today").status_code == 401
 
 
 def test_login_then_logout(gated):
     assert login(gated).status_code == 204
-    assert gated.get("/api/queue").status_code == 200
+    assert gated.get("/api/plan/today").status_code == 200
     assert gated.get("/api/auth/me").json() == {"username": "nathan"}
 
     assert gated.post("/api/auth/logout").status_code == 204
-    assert gated.get("/api/queue").status_code == 401
+    assert gated.get("/api/plan/today").status_code == 401
 
 
 def test_gate_off_lets_everything_through(client):
-    assert client.get("/api/queue").status_code == 200
+    assert client.get("/api/plan/today").status_code == 200
     assert client.get("/api/auth/me").json() == {"username": None}
 
 
