@@ -124,6 +124,21 @@ class SuggestionRead(BaseModel):
     reason: Reason  # the frontend words it, since pattern labels live there
 
 
+class PlanItemRead(BaseModel):
+    problem: ProblemRead
+    due_on: date | None  # None: the new problem
+    estimate_seconds: int
+    done: bool  # attempted today
+
+
+class PlanRead(BaseModel):
+    today: date
+    budget_seconds: int
+    items: list[PlanItemRead]
+    backlog: list[PlanItemRead]  # due, but didn't fit
+    suggestion: SuggestionRead | None  # why the new item was picked, or keep_reviewing
+
+
 class RatingPartRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
