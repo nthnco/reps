@@ -3,6 +3,7 @@ import { beforeEach, expect, test, vi } from 'vitest'
 import type { Pattern, PatternMasteryRead } from '../api/generated'
 import { getPatternMastery } from '../api/mastery'
 import { PATTERN_LABELS } from '../api/labels'
+import { untouched } from '../test/mastery'
 import { renderWithProviders } from '../test/render'
 import { PatternMasteryList } from './PatternMasteryList'
 
@@ -10,28 +11,6 @@ vi.mock('../api/mastery', () => ({ getPatternMastery: vi.fn() }))
 const getPatternMasteryMock = vi.mocked(getPatternMastery)
 
 const PATTERNS = Object.keys(PATTERN_LABELS) as Pattern[]
-
-function untouched(pattern: Pattern): PatternMasteryRead {
-  return {
-    pattern,
-    displayed_mastery: 0,
-    mastery: 0,
-    peak: 0,
-    certainty: 0,
-    low_data: true,
-    attempt_count: 0,
-    problem_count: 0,
-    problems_attempted: 0,
-    problems_until_counted: 2,
-    attempts_until_trusted: 5,
-    due_count: 0,
-    last_practiced_on: null,
-    median_solve_seconds: null,
-    covered: false,
-    solved_by_tier: { easy: 0, medium: 0, hard: 0 },
-    total_by_tier: { easy: 0, medium: 0, hard: 0 },
-  }
-}
 
 const STACK: PatternMasteryRead = {
   ...untouched('stack'),
