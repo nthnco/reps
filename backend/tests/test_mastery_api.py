@@ -62,7 +62,19 @@ def test_empty_mastery_has_a_row_per_pattern(client):
         "last_practiced_on": None,
         "median_solve_seconds": None,
         "covered": False,
+        "solved_by_tier": {"easy": 0, "medium": 0, "hard": 0},
+        "total_by_tier": {"easy": 0, "medium": 0, "hard": 0},
     }
+
+
+def test_tier_counts_reach_the_row(client):
+    log(client, add_problem(client, "valid-parentheses", difficulty="easy"))
+    add_problem(client, "min-stack", difficulty="medium")
+
+    row = mastery_row(client, "stack")
+
+    assert row["solved_by_tier"] == {"easy": 1, "medium": 0, "hard": 0}
+    assert row["total_by_tier"] == {"easy": 1, "medium": 1, "hard": 0}
 
 
 def test_problem_without_attempts_counts_as_a_problem_only(client):

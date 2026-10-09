@@ -3,7 +3,7 @@ from datetime import date, timedelta
 from itertools import count
 
 from app.models import Difficulty, Pattern
-from app.suggest import Reason, covered_patterns, is_covered, suggest
+from app.suggest import Reason, covered_patterns, is_covered, suggest, tier_counts
 
 E, M, H = Difficulty.EASY, Difficulty.MEDIUM, Difficulty.HARD
 FIRST, SECOND = Pattern.ARRAYS_HASHING, Pattern.TWO_POINTERS
@@ -75,6 +75,18 @@ def test_covered_patterns_lists_every_pattern():
     result = covered_patterns(covered(SECOND))
     assert result[SECOND] and not result[FIRST]
     assert set(result) == set(Pattern)
+
+
+def test_tier_counts_count_distinct_solved_problems_hints_allowed():
+    twice = FakeProblem(M, attempts=[FakeAttempt(), FakeAttempt()])
+    problems = [twice, solved(M, hint=True), failed(M), solved(E), FakeProblem(H), solved(E, SECOND)]
+
+    counts = tier_counts(problems)
+
+    assert counts[FIRST].solved == {E: 1, M: 2, H: 0}
+    assert counts[FIRST].total == {E: 1, M: 3, H: 1}
+    assert counts[SECOND].solved == {E: 1, M: 0, H: 0}
+    assert set(counts) == set(Pattern)
 
 
 # --- which pattern ---

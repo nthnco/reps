@@ -99,6 +99,12 @@ class QueueItem(BaseModel):
     due_on: date
 
 
+class TierCountsRead(BaseModel):
+    easy: int
+    medium: int
+    hard: int
+
+
 class PatternMasteryRead(BaseModel):
     pattern: Pattern
     displayed_mastery: float  # mastery after decay; what the bar shows
@@ -116,6 +122,8 @@ class PatternMasteryRead(BaseModel):
     last_practiced_on: date | None
     median_solve_seconds: int | None
     covered: bool  # breadth pass done; see app/suggest.py
+    solved_by_tier: TierCountsRead  # distinct problems solved, hints allowed
+    total_by_tier: TierCountsRead
 
 
 class SuggestionRead(BaseModel):

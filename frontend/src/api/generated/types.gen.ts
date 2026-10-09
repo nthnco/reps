@@ -189,6 +189,8 @@ export type PatternMasteryRead = {
      * Covered
      */
     covered: boolean;
+    solved_by_tier: TierCountsRead;
+    total_by_tier: TierCountsRead;
 };
 
 /**
@@ -347,6 +349,24 @@ export type SuggestionRead = {
     pattern: Pattern;
     problem: ProblemRead | null;
     reason: Reason;
+};
+
+/**
+ * TierCountsRead
+ */
+export type TierCountsRead = {
+    /**
+     * Easy
+     */
+    easy: number;
+    /**
+     * Medium
+     */
+    medium: number;
+    /**
+     * Hard
+     */
+    hard: number;
 };
 
 /**

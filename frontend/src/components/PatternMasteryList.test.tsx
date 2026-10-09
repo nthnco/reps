@@ -28,6 +28,8 @@ function untouched(pattern: Pattern): PatternMasteryRead {
     last_practiced_on: null,
     median_solve_seconds: null,
     covered: false,
+    solved_by_tier: { easy: 0, medium: 0, hard: 0 },
+    total_by_tier: { easy: 0, medium: 0, hard: 0 },
   }
 }
 

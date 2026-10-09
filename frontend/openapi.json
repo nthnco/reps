@@ -572,6 +572,12 @@
           "covered": {
             "type": "boolean",
             "title": "Covered"
+          },
+          "solved_by_tier": {
+            "$ref": "#/components/schemas/TierCountsRead"
+          },
+          "total_by_tier": {
+            "$ref": "#/components/schemas/TierCountsRead"
           }
         },
         "type": "object",
@@ -590,7 +596,9 @@
           "due_count",
           "last_practiced_on",
           "median_solve_seconds",
-          "covered"
+          "covered",
+          "solved_by_tier",
+          "total_by_tier"
         ],
         "title": "PatternMasteryRead"
       },
@@ -876,6 +884,29 @@
           "reason"
         ],
         "title": "SuggestionRead"
+      },
+      "TierCountsRead": {
+        "properties": {
+          "easy": {
+            "type": "integer",
+            "title": "Easy"
+          },
+          "medium": {
+            "type": "integer",
+            "title": "Medium"
+          },
+          "hard": {
+            "type": "integer",
+            "title": "Hard"
+          }
+        },
+        "type": "object",
+        "required": [
+          "easy",
+          "medium",
+          "hard"
+        ],
+        "title": "TierCountsRead"
       },
       "ValidationError": {
         "properties": {

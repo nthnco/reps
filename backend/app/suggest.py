@@ -80,6 +80,23 @@ def covered_patterns(problems: Iterable[ProblemLike]) -> dict[Pattern, bool]:
     return {pattern: is_covered(group) for pattern, group in _by_pattern(problems).items()}
 
 
+@dataclass(frozen=True)
+class TierCounts:
+    solved: dict[Difficulty, int]  # same "solved" as covered: hints allowed
+    total: dict[Difficulty, int]
+
+
+def tier_counts(problems: Iterable[ProblemLike]) -> dict[Pattern, TierCounts]:
+    """Per pattern, distinct problems solved and in total at each difficulty."""
+    return {
+        pattern: TierCounts(
+            solved={d: _solved_count(group, d) for d in LEVELS},
+            total={d: sum(1 for p in group if p.difficulty == d) for d in LEVELS},
+        )
+        for pattern, group in _by_pattern(problems).items()
+    }
+
+
 def _last_two_failed(group: Sequence[ProblemLike]) -> Difficulty | None:
     """The last attempted problem's difficulty if the pattern's last two attempts failed."""
     timeline = sorted(
