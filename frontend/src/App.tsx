@@ -7,18 +7,16 @@ import { queryKeys, useMe } from './api/queries'
 import { AddProblemForm } from './components/AddProblemForm'
 import { primaryButtonClass, secondaryButtonClass } from './components/fields'
 import { LoginPage } from './components/LoginPage'
-import { NextUp } from './components/NextUp'
 import { PatternMasteryList } from './components/PatternMasteryList'
 import { ProblemList } from './components/ProblemList'
 import { ProblemPage } from './components/ProblemPage'
 import { ProfileSummary } from './components/ProfileSummary'
-import { TodaysQueue } from './components/TodaysQueue'
+import { TodaysPlan } from './components/TodaysPlan'
 
 function HomePage() {
   return (
     <>
-      <TodaysQueue />
-      <NextUp />
+      <TodaysPlan />
       <ProblemList />
     </>
   )

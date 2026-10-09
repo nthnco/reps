@@ -1,26 +1,20 @@
-from datetime import date
-from typing import Annotated
+"""Which attempted problems are due. No endpoint of its own: today's plan serves it."""
 
-from fastapi import APIRouter, Depends
+from datetime import date
+
 from sqlalchemy.orm import Session
 
 from app.clock import local_today
-from app.db import get_db
 from app.schemas import ProblemRead, QueueItem
 from app.sm2 import schedule
 from app.snapshot import load_problems
 
-router = APIRouter(prefix="/api/queue", tags=["queue"])
-
-
-@router.get("", response_model=list[QueueItem])
-def todays_queue(db: Annotated[Session, Depends(get_db)]) -> list[QueueItem]:
-    """Problems due today or earlier, most overdue first. Never-attempted ones are left out."""
-    return build_queue(db)
-
 
 def build_queue(db: Session, as_of: date | None = None) -> list[QueueItem]:
-    """The queue as it stood at the start of `as_of` (default: live, as of now)."""
+    """Due at the start of `as_of` (default: live, as of now), most overdue first.
+
+    Never-attempted problems are left out.
+    """
     today = as_of or local_today()
     # Due dates aren't stored, so every problem's history is replayed here.
     problems = load_problems(db, as_of)

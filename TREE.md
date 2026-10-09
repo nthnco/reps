@@ -90,6 +90,16 @@ Build next, in this order: 8, 9, 7, 10, 11. The rest wait.
     first; new problems from branch 7; a backlog line for what didn't fit.
     Read "today" once per request and pass it to both the plan and the
     done-today check, so a request that spans midnight can't mix two days.
+    - Served on `GET /api/plan/today`; numbers in `plan_config.py`.
+    - **Estimate**: the problem's last solve (hint or not) with a duration
+      over 0; else 15 / 25 / 35 min by difficulty.
+    - **Fit**: the new problem always goes in first, even past the budget
+      (the user's call: new material never stalls; the cost is an unbounded
+      backlog after a break). Reviews fill the rest; the first that doesn't
+      fit ends the plan, so a short review never jumps a more overdue long
+      one. An otherwise empty plan takes one review over budget.
+    - Backdating an attempt to before today changes the plan the same day.
+      Accepted: preventing it would need a `created_at` column.
 11. **Pace**: a dropdown, sent as `GET /api/plan/today?pace=` with an enum
     (anything else is a 422; missing is steady). Stored in localStorage,
     falling back to steady if invalid; server-side once accounts exist.

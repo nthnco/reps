@@ -7,7 +7,7 @@ from starlette.middleware.sessions import SessionMiddleware
 from starlette.types import Scope
 
 from app import auth
-from app.routes import mastery, problems, queue
+from app.routes import mastery, plan, problems
 
 THIRTY_DAYS = 30 * 24 * 60 * 60
 
@@ -43,8 +43,8 @@ app.add_middleware(
 app.include_router(auth.router)
 login_required = [Depends(auth.require_login)]
 app.include_router(problems.router, dependencies=login_required)
-app.include_router(queue.router, dependencies=login_required)
 app.include_router(mastery.router, dependencies=login_required)
+app.include_router(plan.router, dependencies=login_required)
 
 
 @app.get("/api/health")

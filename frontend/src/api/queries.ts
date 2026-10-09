@@ -1,18 +1,17 @@
 import { useQuery } from '@tanstack/react-query'
 import { getMe } from './auth'
-import { getPatternMastery, getProfileSummary, getSuggestion } from './mastery'
+import { getPatternMastery, getProfileSummary } from './mastery'
 import { listProblems } from './problems'
-import { getTodaysQueue } from './queue'
+import { getTodaysPlan } from './plan'
 
 // Cache keys in one place, so invalidation can't drift from the queries.
 export const queryKeys = {
   me: ['me'] as const,
   problems: ['problems'] as const,
-  queue: ['queue'] as const,
   // All three are computed from every problem and attempt, so any save stales them.
   patternMastery: ['patternMastery'] as const,
   profileSummary: ['profileSummary'] as const,
-  suggestion: ['suggestion'] as const,
+  plan: ['plan'] as const,
 }
 
 export function useMe() {
@@ -23,10 +22,6 @@ export function useProblems() {
   return useQuery({ queryKey: queryKeys.problems, queryFn: listProblems })
 }
 
-export function useTodaysQueue() {
-  return useQuery({ queryKey: queryKeys.queue, queryFn: getTodaysQueue })
-}
-
 export function usePatternMastery() {
   return useQuery({ queryKey: queryKeys.patternMastery, queryFn: getPatternMastery })
 }
@@ -35,6 +30,6 @@ export function useProfileSummary() {
   return useQuery({ queryKey: queryKeys.profileSummary, queryFn: getProfileSummary })
 }
 
-export function useSuggestion() {
-  return useQuery({ queryKey: queryKeys.suggestion, queryFn: getSuggestion })
+export function useTodaysPlan() {
+  return useQuery({ queryKey: queryKeys.plan, queryFn: getTodaysPlan })
 }

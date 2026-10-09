@@ -2,7 +2,7 @@ import type { PatternMasteryRead } from '../api/generated'
 import { PATTERN_LABELS } from '../api/labels'
 import { usePatternMastery } from '../api/queries'
 import { formatDueDate } from '../dates'
-import { plural, toPercent } from '../format'
+import { formatMinutes, plural, toPercent } from '../format'
 
 function MasteryBar({ row }: { row: PatternMasteryRead }) {
   const shown = toPercent(row.displayed_mastery)
@@ -40,7 +40,7 @@ function details(row: PatternMasteryRead): string {
   const parts = [plural(row.attempt_count, 'attempt'), plural(row.problem_count, 'problem')]
   if (row.last_practiced_on) parts.push(`last practiced ${formatDueDate(row.last_practiced_on)}`)
   if (row.median_solve_seconds !== null) {
-    parts.push(`median ${Math.max(1, Math.round(row.median_solve_seconds / 60))} min`)
+    parts.push(`median ${formatMinutes(row.median_solve_seconds)}`)
   }
   return parts.join(' · ')
 }

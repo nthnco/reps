@@ -191,32 +191,6 @@
         }
       }
     },
-    "/api/queue": {
-      "get": {
-        "tags": [
-          "queue"
-        ],
-        "summary": "Todays Queue",
-        "description": "Problems due today or earlier, most overdue first. Never-attempted ones are left out.",
-        "operationId": "todays_queue_api_queue_get",
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "items": {
-                    "$ref": "#/components/schemas/QueueItem"
-                  },
-                  "type": "array",
-                  "title": "Response Todays Queue Api Queue Get"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/api/patterns/mastery": {
       "get": {
         "tags": [
@@ -287,6 +261,27 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ProfileSummaryRead"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/plan/today": {
+      "get": {
+        "tags": [
+          "plan"
+        ],
+        "summary": "Todays Plan",
+        "operationId": "todays_plan_api_plan_today_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlanRead"
                 }
               }
             }
@@ -599,6 +594,87 @@
         ],
         "title": "PatternMasteryRead"
       },
+      "PlanItemRead": {
+        "properties": {
+          "problem": {
+            "$ref": "#/components/schemas/ProblemRead"
+          },
+          "due_on": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Due On"
+          },
+          "estimate_seconds": {
+            "type": "integer",
+            "title": "Estimate Seconds"
+          },
+          "done": {
+            "type": "boolean",
+            "title": "Done"
+          }
+        },
+        "type": "object",
+        "required": [
+          "problem",
+          "due_on",
+          "estimate_seconds",
+          "done"
+        ],
+        "title": "PlanItemRead"
+      },
+      "PlanRead": {
+        "properties": {
+          "today": {
+            "type": "string",
+            "format": "date",
+            "title": "Today"
+          },
+          "budget_seconds": {
+            "type": "integer",
+            "title": "Budget Seconds"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/PlanItemRead"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "backlog": {
+            "items": {
+              "$ref": "#/components/schemas/PlanItemRead"
+            },
+            "type": "array",
+            "title": "Backlog"
+          },
+          "suggestion": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SuggestionRead"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "today",
+          "budget_seconds",
+          "items",
+          "backlog",
+          "suggestion"
+        ],
+        "title": "PlanRead"
+      },
       "ProblemCreate": {
         "properties": {
           "title": {
@@ -735,24 +811,6 @@
           "total_completed"
         ],
         "title": "ProfileSummaryRead"
-      },
-      "QueueItem": {
-        "properties": {
-          "problem": {
-            "$ref": "#/components/schemas/ProblemRead"
-          },
-          "due_on": {
-            "type": "string",
-            "format": "date",
-            "title": "Due On"
-          }
-        },
-        "type": "object",
-        "required": [
-          "problem",
-          "due_on"
-        ],
-        "title": "QueueItem"
       },
       "RatingPartRead": {
         "properties": {
