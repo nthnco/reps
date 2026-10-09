@@ -107,6 +107,37 @@ Build next, in this order: 8, 9, 7, 10, 11. The rest wait.
     light 30 min / 1 new, steady 60 / 1, intense 90 / 2. Two new a day
     roughly doubles the review load within weeks; raise steady to 2 only
     if its backlog stays at zero.
+12. **All problems redesign** (after 7): patterns grouped into roadmap
+    stages, one card per pattern with per-difficulty progress. Display
+    only: nothing is locked, nothing new is stored.
+    - **Roadmap order** follows NeetCode's roadmap tree, not its list:
+      Greedy and Intervals move to just after Heap. The `Pattern` enum and
+      `labels.ts` change together; branch 7's suggestions follow.
+    - **Stages** are a frontend constant next to `PATTERN_LABELS`, each a
+      contiguous slice of the roadmap order (tested), so the Next card is
+      always in the first stage that isn't fully covered:
+      Foundations (Arrays & Hashing to Binary Search), Lists and trees
+      (Linked List to Heap), Greedy and intervals, Search (Backtracking to
+      Advanced Graphs), Dynamic programming, Extras (Math & Geometry, Bit
+      Manipulation). Header: "Foundations · 2 of 5 covered".
+    - **API**: each `/api/patterns/mastery` row gains `solved_by_tier` and
+      `total_by_tier` (`{easy, medium, hard}`). Solved = any solved
+      attempt, hints allowed. No `status` or `progress` field: covered is
+      already on the row, and the Next card comes from
+      `/api/patterns/suggestion`, so it always matches today's plan.
+    - **Card**: name, `displayed_mastery` (a dash when `low_data`), a bar
+      in Easy / Medium / Hard sections that each fill on their own, the
+      E / M / H counts, a checkmark when covered, "Next" on the suggested
+      pattern. Easy and Medium share 85% of the bar by weight (1 and 2);
+      Hard is a fixed 15%, so 100% means everything solved. A tier with
+      no problems has no section (and shows a muted 0/0).
+    - **Layout**: cards in a `repeat(auto-fill, minmax(220px, 1fr))` grid
+      per stage band; the home page widens to `max-w-6xl`, Today's plan
+      stays `max-w-3xl`. Clicking a card opens its problem list in a
+      full-width panel under that band, one at a time. Stages are always
+      open.
+    - **Dimming**: every stage after the first one with nothing covered is
+      dimmed, with "Suggested after <that stage>". Cards stay clickable.
 
 ## Decided
 
