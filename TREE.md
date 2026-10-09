@@ -125,12 +125,12 @@ Build next, in this order: 8, 9, 7, 10, 11. The rest wait.
       attempt, hints allowed. No `status` or `progress` field: covered is
       already on the row, and the Next card comes from
       `/api/patterns/suggestion`, so it always matches today's plan.
-    - **Card**: name, `displayed_mastery` (a dash when `low_data`), a bar
-      in Easy / Medium / Hard sections that each fill on their own, the
-      E / M / H counts, a checkmark when covered, "Next" on the suggested
-      pattern. Easy and Medium share 85% of the bar by weight (1 and 2);
-      Hard is a fixed 15%, so 100% means everything solved. A tier with
-      no problems has no section (and shows a muted 0/0).
+    - **Card**: name, `displayed_mastery` (a dash when `low_data`), the
+      counts as text ("E 1/1 · M 1/4 · H 0/1"; a tier with no problems is
+      muted), a checkmark when covered, "Next" on the suggested pattern.
+      No progress bar: the badges and dimming already show where you are,
+      a bar needs made-up difficulty weights, and the mastery page's bars
+      mean retention. Add one later if the page feels flat.
     - **Layout**: cards in a `repeat(auto-fill, minmax(220px, 1fr))` grid
       per stage band; the home page widens to `max-w-6xl`, Today's plan
       stays `max-w-3xl`. Clicking a card opens its problem list in a
