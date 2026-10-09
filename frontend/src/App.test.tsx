@@ -2,7 +2,9 @@ import { screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, expect, test, vi } from 'vitest'
 import App from './App'
-import type { ProblemRead } from './api/generated'
+import type { Pattern, ProblemRead } from './api/generated'
+import { PATTERN_LABELS } from './api/labels'
+import { untouched } from './test/mastery'
 import { renderWithProviders } from './test/render'
 
 const TWO_SUM: ProblemRead = {
@@ -45,6 +47,8 @@ function fakeBackend({ gated = false } = {}) {
         return json({ username: gated ? 'nathan' : null })
       case 'GET /api/problems':
         return json([TWO_SUM])
+      case 'GET /api/patterns/mastery':
+        return json((Object.keys(PATTERN_LABELS) as Pattern[]).map(untouched))
       case 'GET /api/plan/today':
         return json({
           today: '2026-10-03',
@@ -105,10 +109,12 @@ test('the problem page says so when the problem does not exist', async () => {
 })
 
 test('all problems link to their problem pages', async () => {
+  const user = userEvent.setup()
   renderWithProviders(<App />)
 
   const list = (await screen.findByRole('heading', { name: 'All problems' })).closest('section')!
-  expect(await within(list).findByRole('link', { name: 'Two Sum' })).toHaveAttribute(
+  await user.click(await within(list).findByRole('button', { name: /Arrays & Hashing/ }))
+  expect(within(list).getByRole('link', { name: 'Two Sum' })).toHaveAttribute(
     'href',
     '/problems/7',
   )

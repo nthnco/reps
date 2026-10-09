@@ -40,8 +40,10 @@ def test_data_is_150_unique_valid_problems():
     for pattern, slug, title, difficulty in entries:
         assert Pattern(pattern) and Difficulty(difficulty) and title
         assert normalize_leetcode_link(preload._link(slug)) == preload._link(slug)
-    # Patterns appear in roadmap order, each once.
-    assert [p for p, _ in preload.NEETCODE_150] == list(Pattern)
+    # Every pattern appears once. The list keeps NeetCode's list order, not the
+    # roadmap's: branch 7 only compares ids within a pattern.
+    patterns = [p for p, _ in preload.NEETCODE_150]
+    assert sorted(patterns) == sorted(Pattern)
 
 
 def test_migration_inserted_them_in_neetcode_order(migrated_db):

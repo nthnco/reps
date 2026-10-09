@@ -1,5 +1,5 @@
 import { useQueryClient } from '@tanstack/react-query'
-import { useEffect } from 'react'
+import { useEffect, type ReactNode } from 'react'
 import { Link, Route, Routes } from 'react-router'
 import { logout } from './api/auth'
 import { setUnauthorizedHandler } from './api/errors'
@@ -16,10 +16,17 @@ import { TodaysPlan } from './components/TodaysPlan'
 function HomePage() {
   return (
     <>
-      <TodaysPlan />
+      <div className="max-w-3xl">
+        <TodaysPlan />
+      </div>
       <ProblemList />
     </>
   )
+}
+
+// Every page but home keeps the narrow column; only the pattern cards use the width.
+function Narrow({ children }: { children: ReactNode }) {
+  return <div className="max-w-3xl space-y-10">{children}</div>
 }
 
 function AddProblemPage() {
@@ -70,7 +77,7 @@ function App() {
   }
 
   return (
-    <main className="mx-auto max-w-3xl space-y-10 p-4">
+    <main className="mx-auto max-w-6xl space-y-10 p-4">
       <header className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">
           <Link to="/">Reps</Link>
@@ -93,9 +100,9 @@ function App() {
       </header>
       <Routes>
         <Route path="/" element={<HomePage />} />
-        <Route path="/patterns" element={<MasteryPage />} />
-        <Route path="/problems/new" element={<AddProblemPage />} />
-        <Route path="/problems/:id" element={<ProblemPage />} />
+        <Route path="/patterns" element={<Narrow><MasteryPage /></Narrow>} />
+        <Route path="/problems/new" element={<Narrow><AddProblemPage /></Narrow>} />
+        <Route path="/problems/:id" element={<Narrow><ProblemPage /></Narrow>} />
       </Routes>
     </main>
   )

@@ -126,7 +126,7 @@ export type Me = {
 /**
  * Pattern
  */
-export type Pattern = 'arrays_hashing' | 'two_pointers' | 'sliding_window' | 'stack' | 'binary_search' | 'linked_list' | 'trees' | 'tries' | 'heap' | 'backtracking' | 'graphs' | 'advanced_graphs' | 'dp_1d' | 'dp_2d' | 'greedy' | 'intervals' | 'math_geometry' | 'bit_manipulation';
+export type Pattern = 'arrays_hashing' | 'two_pointers' | 'sliding_window' | 'stack' | 'binary_search' | 'linked_list' | 'trees' | 'tries' | 'heap' | 'greedy' | 'intervals' | 'backtracking' | 'graphs' | 'advanced_graphs' | 'dp_1d' | 'dp_2d' | 'math_geometry' | 'bit_manipulation';
 
 /**
  * PatternMasteryRead
@@ -189,6 +189,8 @@ export type PatternMasteryRead = {
      * Covered
      */
     covered: boolean;
+    solved_by_tier: TierCountsRead;
+    total_by_tier: TierCountsRead;
 };
 
 /**
@@ -347,6 +349,24 @@ export type SuggestionRead = {
     pattern: Pattern;
     problem: ProblemRead | null;
     reason: Reason;
+};
+
+/**
+ * TierCountsRead
+ */
+export type TierCountsRead = {
+    /**
+     * Easy
+     */
+    easy: number;
+    /**
+     * Medium
+     */
+    medium: number;
+    /**
+     * Hard
+     */
+    hard: number;
 };
 
 /**

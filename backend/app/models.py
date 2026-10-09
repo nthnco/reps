@@ -30,6 +30,8 @@ class Base(DeclarativeBase):
 
 
 class Pattern(enum.StrEnum):
+    # Roadmap order (NeetCode's tree, not its list): branch 7 suggests the
+    # earliest uncovered pattern, and the frontend's stages slice this order.
     ARRAYS_HASHING = "arrays_hashing"
     TWO_POINTERS = "two_pointers"
     SLIDING_WINDOW = "sliding_window"
@@ -39,13 +41,13 @@ class Pattern(enum.StrEnum):
     TREES = "trees"
     TRIES = "tries"
     HEAP = "heap"
+    GREEDY = "greedy"
+    INTERVALS = "intervals"
     BACKTRACKING = "backtracking"
     GRAPHS = "graphs"
     ADVANCED_GRAPHS = "advanced_graphs"
     DP_1D = "dp_1d"
     DP_2D = "dp_2d"
-    GREEDY = "greedy"
-    INTERVALS = "intervals"
     MATH_GEOMETRY = "math_geometry"
     BIT_MANIPULATION = "bit_manipulation"
 

@@ -24,17 +24,18 @@ from app.mastery import (
     profile_summary,
     total_completed,
 )
-from app.models import Pattern
+from app.models import Difficulty, Pattern
 from app.schemas import (
     MasteryRulesRead,
     PatternMasteryRead,
     ProblemRead,
     ProfileSummaryRead,
     SuggestionRead,
+    TierCountsRead,
 )
 from app.sm2 import ReviewState, retention, schedule
 from app.snapshot import ProblemSnapshot, load_problems
-from app.suggest import covered_patterns, suggest
+from app.suggest import covered_patterns, suggest, tier_counts
 
 router = APIRouter(prefix="/api", tags=["mastery"])
 
@@ -59,7 +60,11 @@ def _displayed(
     }
 
 
-@router.get("/patterns/mastery", response_model=list[PatternMasteryRead])
+def _tier_read(counts: dict[Difficulty, int]) -> TierCountsRead:
+    return TierCountsRead(**{d.value: n for d, n in counts.items()})
+
+
+@router.get("/patterns/mastery",response_model=list[PatternMasteryRead])
 def get_pattern_mastery(db: Annotated[Session, Depends(get_db)]) -> list[PatternMasteryRead]:
     """One row per pattern, in the fixed pattern order, including untouched ones."""
     return build_pattern_mastery(db)
@@ -74,6 +79,7 @@ def build_pattern_mastery(db: Session, as_of: date | None = None) -> list[Patter
     displayed = _displayed(rows, states, today)
     problem_counts = Counter(p.pattern for p in problems)
     covered = covered_patterns(problems)  # pyright: ignore[reportArgumentType]
+    tiers = tier_counts(problems)  # pyright: ignore[reportArgumentType]
 
     return [
         PatternMasteryRead(
@@ -92,6 +98,8 @@ def build_pattern_mastery(db: Session, as_of: date | None = None) -> list[Patter
             last_practiced_on=row.last_practiced_on,
             median_solve_seconds=row.median_solve_seconds,
             covered=covered[row.pattern],
+            solved_by_tier=_tier_read(tiers[row.pattern].solved),
+            total_by_tier=_tier_read(tiers[row.pattern].total),
         )
         for row in rows
     ]
