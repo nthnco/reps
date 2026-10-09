@@ -704,6 +704,7 @@
           },
           "notes": {
             "type": "string",
+            "maxLength": 5000,
             "title": "Notes",
             "default": ""
           }

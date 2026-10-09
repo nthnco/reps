@@ -51,7 +51,8 @@ class ProblemCreate(BaseModel):
     link: Link
     pattern: Pattern
     difficulty: Difficulty
-    notes: str = ""
+    # The column is unbounded Text; this keeps one request from filling the database.
+    notes: Annotated[str, StringConstraints(max_length=5000)] = ""
 
 
 class ProblemRead(BaseModel):

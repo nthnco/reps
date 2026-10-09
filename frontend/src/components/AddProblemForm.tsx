@@ -125,6 +125,7 @@ export function AddProblemForm() {
         <textarea
           id="notes"
           rows={3}
+          maxLength={5000}
           value={values.notes}
           onChange={update('notes')}
           className={inputClass}
