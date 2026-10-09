@@ -60,7 +60,7 @@ test('submits the problem, shows success, and clears the form', async () => {
   expect(await screen.findByRole('status')).toHaveTextContent('Saved Two Sum.')
   expect(screen.getByLabelText('Title')).toHaveValue('')
   expect(invalidate).toHaveBeenCalledWith({ queryKey: ['problems'] })
-  expect(invalidate).toHaveBeenCalledWith({ queryKey: ['queue'] })
+  expect(invalidate).toHaveBeenCalledWith({ queryKey: ['plan'] })
 })
 
 test('shows the error message and marks the failing field', async () => {

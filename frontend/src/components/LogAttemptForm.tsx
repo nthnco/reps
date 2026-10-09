@@ -86,10 +86,9 @@ export function LogAttemptForm({ problem }: { problem: ProblemRead }) {
       setFieldErrors({})
       if (ownsTimer) timer.reset()
       // The attempt moves this problem's next review date and its pattern's mastery.
-      void queryClient.invalidateQueries({ queryKey: queryKeys.queue })
       void queryClient.invalidateQueries({ queryKey: queryKeys.patternMastery })
       void queryClient.invalidateQueries({ queryKey: queryKeys.profileSummary })
-      void queryClient.invalidateQueries({ queryKey: queryKeys.suggestion })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.plan })
     } else {
       setMessage(result.message)
       setFieldErrors(result.fieldErrors)

@@ -192,6 +192,48 @@ export type PatternMasteryRead = {
 };
 
 /**
+ * PlanItemRead
+ */
+export type PlanItemRead = {
+    problem: ProblemRead;
+    /**
+     * Due On
+     */
+    due_on: string | null;
+    /**
+     * Estimate Seconds
+     */
+    estimate_seconds: number;
+    /**
+     * Done
+     */
+    done: boolean;
+};
+
+/**
+ * PlanRead
+ */
+export type PlanRead = {
+    /**
+     * Today
+     */
+    today: string;
+    /**
+     * Budget Seconds
+     */
+    budget_seconds: number;
+    /**
+     * Items
+     */
+    items: Array<PlanItemRead>;
+    /**
+     * Backlog
+     */
+    backlog: Array<PlanItemRead>;
+    suggestion: SuggestionRead | null;
+};
+
+/**
  * ProblemCreate
  */
 export type ProblemCreate = {
@@ -272,17 +314,6 @@ export type ProfileSummaryRead = {
      * Total Completed
      */
     total_completed: number;
-};
-
-/**
- * QueueItem
- */
-export type QueueItem = {
-    problem: ProblemRead;
-    /**
-     * Due On
-     */
-    due_on: string;
 };
 
 /**
@@ -476,24 +507,6 @@ export type CreateAttemptApiProblemsProblemIdAttemptsPostResponses = {
 
 export type CreateAttemptApiProblemsProblemIdAttemptsPostResponse = CreateAttemptApiProblemsProblemIdAttemptsPostResponses[keyof CreateAttemptApiProblemsProblemIdAttemptsPostResponses];
 
-export type TodaysQueueApiQueueGetData = {
-    body?: never;
-    path?: never;
-    query?: never;
-    url: '/api/queue';
-};
-
-export type TodaysQueueApiQueueGetResponses = {
-    /**
-     * Response Todays Queue Api Queue Get
-     *
-     * Successful Response
-     */
-    200: Array<QueueItem>;
-};
-
-export type TodaysQueueApiQueueGetResponse = TodaysQueueApiQueueGetResponses[keyof TodaysQueueApiQueueGetResponses];
-
 export type GetPatternMasteryApiPatternsMasteryGetData = {
     body?: never;
     path?: never;
@@ -545,6 +558,22 @@ export type GetProfileSummaryApiProfileSummaryGetResponses = {
 };
 
 export type GetProfileSummaryApiProfileSummaryGetResponse = GetProfileSummaryApiProfileSummaryGetResponses[keyof GetProfileSummaryApiProfileSummaryGetResponses];
+
+export type TodaysPlanApiPlanTodayGetData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/plan/today';
+};
+
+export type TodaysPlanApiPlanTodayGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: PlanRead;
+};
+
+export type TodaysPlanApiPlanTodayGetResponse = TodaysPlanApiPlanTodayGetResponses[keyof TodaysPlanApiPlanTodayGetResponses];
 
 export type HealthApiHealthGetData = {
     body?: never;

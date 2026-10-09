@@ -22,7 +22,7 @@ function json(body: unknown, status = 200) {
   })
 }
 
-// Just enough of the API for one problem: it's new until an attempt is logged.
+// Just enough of the API for one problem: due in today's plan, done once an attempt is logged.
 // `gated` turns on the login gate (password "pw"); `expire()` ends the session.
 function fakeBackend({ gated = false } = {}) {
   let attempted = false
@@ -45,8 +45,14 @@ function fakeBackend({ gated = false } = {}) {
         return json({ username: gated ? 'nathan' : null })
       case 'GET /api/problems':
         return json([TWO_SUM])
-      case 'GET /api/queue':
-        return json(attempted ? [] : [{ problem: TWO_SUM, due_on: '2026-10-03' }])
+      case 'GET /api/plan/today':
+        return json({
+          today: '2026-10-03',
+          budget_seconds: 3600,
+          items: [{ problem: TWO_SUM, due_on: '2026-10-03', estimate_seconds: 900, done: attempted }],
+          backlog: [],
+          suggestion: null,
+        })
       case 'POST /api/problems/7/attempts':
         attempted = true
         return json({ id: 1, problem_id: 7, ...JSON.parse(init!.body as string) }, 201)
@@ -68,17 +74,18 @@ afterEach(() => {
 
 test('with the gate off, the app shows without a login or logout', async () => {
   renderWithProviders(<App />)
-  expect(await screen.findByRole('heading', { name: "Today's queue" })).toBeInTheDocument()
+  expect(await screen.findByRole('heading', { name: "Today's plan" })).toBeInTheDocument()
   expect(screen.queryByRole('button', { name: 'Log out' })).not.toBeInTheDocument()
 })
 
-test('logging an attempt takes the problem off the queue', async () => {
+test('logging an attempt marks the problem done in the plan', async () => {
   const user = userEvent.setup()
   renderWithProviders(<App />)
 
-  await screen.findByRole('heading', { name: "Today's queue" })
-  const queue = () => screen.getByRole('heading', { name: "Today's queue" }).closest('section')!
-  await user.click(await within(queue()).findByRole('link', { name: 'Two Sum' }))
+  await screen.findByRole('heading', { name: "Today's plan" })
+  const plan = () => screen.getByRole('heading', { name: "Today's plan" }).closest('section')!
+  expect(await within(plan()).findByText('Due Oct 3')).toBeInTheDocument()
+  await user.click(within(plan()).getByRole('link', { name: 'Two Sum' }))
 
   expect(await screen.findByRole('heading', { name: 'Two Sum' })).toBeInTheDocument()
   await user.type(screen.getByLabelText(/enter minutes/), '15')
@@ -88,7 +95,7 @@ test('logging an attempt takes the problem off the queue', async () => {
   await screen.findByRole('status')
 
   await user.click(screen.getByRole('link', { name: '← All problems' }))
-  expect(await within(queue()).findByText('Nothing due today.')).toBeInTheDocument()
+  expect(await within(plan()).findByText('✓ Done')).toBeInTheDocument()
 })
 
 test('the problem page says so when the problem does not exist', async () => {
@@ -111,7 +118,7 @@ test('the add-problem form has its own page, reached from the nav', async () => 
   const user = userEvent.setup()
   renderWithProviders(<App />)
 
-  await screen.findByRole('heading', { name: "Today's queue" })
+  await screen.findByRole('heading', { name: "Today's plan" })
   expect(screen.queryByRole('heading', { name: 'Add a problem' })).not.toBeInTheDocument()
 
   await user.click(screen.getByRole('link', { name: 'Add problem' }))
@@ -143,7 +150,7 @@ test('logging in shows the app, logging out returns to the login page', async ()
   renderWithProviders(<App />)
 
   const user = await logIn('pw')
-  expect(await screen.findByRole('heading', { name: "Today's queue" })).toBeInTheDocument()
+  expect(await screen.findByRole('heading', { name: "Today's plan" })).toBeInTheDocument()
 
   await user.click(screen.getByRole('button', { name: 'Log out' }))
   expect(await screen.findByLabelText('Password')).toBeInTheDocument()
@@ -154,10 +161,10 @@ test('a session that expires mid-use goes back to the login page', async () => {
   vi.stubGlobal('fetch', backend.fetchMock)
   const { queryClient } = renderWithProviders(<App />)
   await logIn('pw')
-  await screen.findByRole('heading', { name: "Today's queue" })
+  await screen.findByRole('heading', { name: "Today's plan" })
 
   backend.expire()
-  await queryClient.invalidateQueries({ queryKey: ['queue'] })
+  await queryClient.invalidateQueries({ queryKey: ['plan'] })
 
   expect(await screen.findByLabelText('Password')).toBeInTheDocument()
 })
