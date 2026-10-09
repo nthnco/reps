@@ -20,3 +20,24 @@ services:
         sync: false
       - key: SECRET_KEY # signs the login cookie; Render generates it once
         generateValue: true
+
+  # The public demo: same image, its own Neon database, no login. Each
+  # visitor gets a private, hour-long copy of sample data (app/demo.py).
+  - type: web
+    name: reps-demo
+    runtime: docker
+    plan: free
+    region: oregon
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /api/health
+    autoDeployTrigger: checksPass
+    envVars:
+      - key: DATABASE_URL # a separate Neon database, never the private one
+        sync: false
+      - key: DEMO_MODE
+        value: "true"
+      - key: REQUIRE_LOGIN # the image defaults it on; the demo opts out
+        value: "false"
+      - key: SECRET_KEY # signs the workspace cookie
+        generateValue: true

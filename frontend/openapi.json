@@ -59,7 +59,7 @@
           "auth"
         ],
         "summary": "Me",
-        "description": "Lets the frontend decide whether to show the login page.\n\n200 means \"in\": username is null when the gate is off (local dev).",
+        "description": "Lets the frontend decide whether to show the login page.\n\n200 means \"in\": username is null when the gate is off (local dev or demo).",
         "operationId": "me_api_auth_me_get",
         "responses": {
           "200": {
@@ -71,6 +71,21 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "/api/demo/reset": {
+      "post": {
+        "tags": [
+          "demo"
+        ],
+        "summary": "Reset",
+        "description": "Start the visitor over with a fresh copy of the sample data.",
+        "operationId": "reset_api_demo_reset_post",
+        "responses": {
+          "204": {
+            "description": "Successful Response"
           }
         }
       }
@@ -465,11 +480,16 @@
               }
             ],
             "title": "Username"
+          },
+          "demo": {
+            "type": "boolean",
+            "title": "Demo"
           }
         },
         "type": "object",
         "required": [
-          "username"
+          "username",
+          "demo"
         ],
         "title": "Me"
       },
@@ -704,6 +724,7 @@
           },
           "notes": {
             "type": "string",
+            "maxLength": 5000,
             "title": "Notes",
             "default": ""
           }

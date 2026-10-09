@@ -49,7 +49,7 @@ def test_bad_credentials_are_rejected(gated, username, password):
 def test_login_then_logout(gated):
     assert login(gated).status_code == 204
     assert gated.get("/api/plan/today").status_code == 200
-    assert gated.get("/api/auth/me").json() == {"username": "nathan"}
+    assert gated.get("/api/auth/me").json() == {"username": "nathan", "demo": False}
 
     assert gated.post("/api/auth/logout").status_code == 204
     assert gated.get("/api/plan/today").status_code == 401
@@ -57,7 +57,7 @@ def test_login_then_logout(gated):
 
 def test_gate_off_lets_everything_through(client):
     assert client.get("/api/plan/today").status_code == 200
-    assert client.get("/api/auth/me").json() == {"username": None}
+    assert client.get("/api/auth/me").json() == {"username": None, "demo": False}
 
 
 def test_config_is_off_unless_required():

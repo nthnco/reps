@@ -68,6 +68,7 @@ def test_duplicate_link_returns_409_even_with_different_title_and_url_shape(clie
         {"link": "https://leetcode.com/problems/" + "x" * 471},  # 501 chars
         {"pattern": "union_find"},
         {"difficulty": "impossible"},
+        {"notes": "x" * 5001},
     ],
 )
 def test_invalid_problem_returns_422(client, overrides):

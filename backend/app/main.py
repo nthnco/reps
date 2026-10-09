@@ -1,12 +1,15 @@
 import os
+from contextlib import asynccontextmanager
 
-from fastapi import Depends, FastAPI
+from fastapi import Depends, FastAPI, Request
+from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.exceptions import HTTPException
 from starlette.middleware.sessions import SessionMiddleware
 from starlette.types import Scope
 
-from app import auth
+from app import auth, demo
+from app.db import get_db
 from app.routes import mastery, plan, problems
 
 THIRTY_DAYS = 30 * 24 * 60 * 60
@@ -29,18 +32,35 @@ class SinglePageApp(StaticFiles):
                 raise
             return await super().get_response("index.html", scope)
 
-app = FastAPI(title="Reps API")
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    if app.state.demo.enabled:
+        demo.setup_registry()
+    yield
+
+
+app = FastAPI(title="Reps API", lifespan=lifespan)
 app.state.auth = auth.load_auth_config()
+app.state.demo = demo.load_demo_config()
 app.add_middleware(
     SessionMiddleware,
-    # With the gate off nothing meaningful is stored, so any key will do.
-    secret_key=app.state.auth.secret_key or "dev-only-not-secret",
+    # With the gate and demo off nothing meaningful is stored, so any key will do.
+    secret_key=app.state.auth.secret_key or app.state.demo.secret_key or "dev-only-not-secret",
     max_age=THIRTY_DAYS,
     same_site="lax",
     https_only=app.state.auth.required,
 )
 
+if app.state.demo.enabled:
+    app.dependency_overrides[get_db] = demo.get_workspace_db
+
+
+@app.exception_handler(demo.DemoLimitReached)
+def demo_limit_reached(request: Request, exc: demo.DemoLimitReached) -> JSONResponse:
+    return JSONResponse({"detail": str(exc)}, status_code=403)
+
 app.include_router(auth.router)
+app.include_router(demo.router)
 login_required = [Depends(auth.require_login)]
 app.include_router(problems.router, dependencies=login_required)
 app.include_router(mastery.router, dependencies=login_required)

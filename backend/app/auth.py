@@ -17,6 +17,8 @@ from fastapi import APIRouter, Depends, HTTPException, Request, status
 from pwdlib import PasswordHash
 from pydantic import BaseModel
 
+from app import demo
+
 password_hash = PasswordHash.recommended()  # argon2
 
 
@@ -68,6 +70,7 @@ class LoginBody(BaseModel):
 
 class Me(BaseModel):
     username: str | None
+    demo: bool
 
 
 @router.post("/login", status_code=status.HTTP_204_NO_CONTENT)
@@ -89,6 +92,11 @@ def logout(request: Request) -> None:
 def me(request: Request) -> Me:
     """Lets the frontend decide whether to show the login page.
 
-    200 means "in": username is null when the gate is off (local dev).
+    200 means "in": username is null when the gate is off (local dev or demo).
     """
-    return Me(username=request.session.get("username"))
+    is_demo = request.app.state.demo.enabled
+    if is_demo:
+        # The frontend asks this before anything else, so assigning the
+        # workspace here sets the cookie before the page's parallel requests.
+        demo.workspace_schema(request)
+    return Me(username=request.session.get("username"), demo=is_demo)

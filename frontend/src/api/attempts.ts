@@ -28,6 +28,11 @@ export async function createAttempt(
     }
   }
 
+  if (response.status === 403) {
+    // The demo's limit on new attempts; the server words it.
+    const { detail } = (await response.json()) as { detail: string }
+    return { ok: false, message: detail, fieldErrors: {} }
+  }
   if (response.status === 422) {
     const fieldErrors = await readFieldErrors<AttemptCreate>(response)
     return { ok: false, message: 'Please fix the fields below.', fieldErrors }
