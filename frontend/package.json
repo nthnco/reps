@@ -12,6 +12,7 @@
     "gen:api": "uv run --directory ../backend python export_openapi.py > openapi.json && openapi-ts"
   },
   "dependencies": {
+    "@fontsource-variable/inter": "^5.3.0",
     "@tanstack/react-query": "^5.104.1",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",

@@ -6,7 +6,18 @@ import type { AttemptCreate, ProblemRead } from '../api/generated'
 import { queryKeys, useProblems } from '../api/queries'
 import { formatDuration } from '../timer/timer'
 import { useTimer } from '../timer/useTimer'
-import { errorProps, Field, FieldError, inputClass, submitClass } from './fields'
+import {
+  cardClass,
+  choiceClass,
+  errorProps,
+  Field,
+  FieldError,
+  ghostButtonClass,
+  inputClass,
+  primaryButtonClass,
+  secondaryButtonClass,
+  submitClass,
+} from './fields'
 
 const EMPTY = {
   minutes: '',
@@ -19,8 +30,8 @@ type FormValues = typeof EMPTY
 
 const LONG_TIMER_SECONDS = 3 * 60 * 60
 
-const buttonClass =
-  'rounded border border-gray-300 px-3 py-1 hover:bg-gray-100 disabled:opacity-50 dark:border-gray-600 dark:hover:bg-gray-800'
+const sectionLabelClass =
+  'text-xs font-semibold tracking-wide text-gray-600 uppercase dark:text-gray-400'
 
 export function LogAttemptForm({ problem }: { problem: ProblemRead }) {
   const queryClient = useQueryClient()
@@ -96,167 +107,178 @@ export function LogAttemptForm({ problem }: { problem: ProblemRead }) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit} className="space-y-3">
       <h3 className="text-lg font-semibold">Log an attempt</h3>
 
-      <div className="space-y-2">
-        <p className="font-medium">Time</p>
-        {otherProblemId !== null ? (
-          <p role="status">
-            The timer is in use for{' '}
-            <Link
-              to={`/problems/${otherProblemId}`}
-              className="text-blue-700 hover:underline dark:text-blue-400"
-            >
-              {otherProblem?.title ?? 'another problem'}
-            </Link>
-            . Log or reset it there first, or{' '}
-            {/* Escape hatch if that problem's page can't be reached. */}
-            <button type="button" onClick={timer.reset} className="underline">
-              discard it
-            </button>
-            .
-          </p>
-        ) : (
-          <div className="flex items-center gap-2">
-            <span className="w-20 font-mono text-2xl" aria-label="Timer">
-              {formatDuration(elapsedMs)}
-            </span>
-            {/* type="button": a plain <button> inside a form would submit it. */}
-            {timer.running ? (
-              <button type="button" onClick={timer.pause} className={buttonClass}>
-                Pause
-              </button>
-            ) : ownsTimer ? (
-              <button type="button" onClick={() => timer.start(problem.id)} className={buttonClass}>
-                Resume
-              </button>
-            ) : (
-              <button
-                type="button"
-                onClick={() => {
-                  timer.start(problem.id)
-                  // Called straight from the click, so popup blockers allow it.
-                  window.open(problem.link, '_blank', 'noopener,noreferrer')
-                }}
-                className={buttonClass}
-              >
-                Start problem
-              </button>
-            )}
-            <button
-              type="button"
-              onClick={timer.reset}
-              disabled={!ownsTimer}
-              className={buttonClass}
-            >
-              Reset
-            </button>
-            {ownsTimer && (
-              <a
-                href={problem.link}
-                target="_blank"
-                rel="noopener noreferrer"
+      <div className={`divide-y divide-gray-100 dark:divide-gray-800 ${cardClass}`}>
+        <div className="space-y-3 p-5">
+          <p className={sectionLabelClass}>Time</p>
+          {otherProblemId !== null ? (
+            <p role="status">
+              The timer is in use for{' '}
+              <Link
+                to={`/problems/${otherProblemId}`}
                 className="text-blue-700 hover:underline dark:text-blue-400"
               >
-                Open on LeetCode
-              </a>
-            )}
+                {otherProblem?.title ?? 'another problem'}
+              </Link>
+              . Log or reset it there first, or{' '}
+              {/* Escape hatch if that problem's page can't be reached. */}
+              <button type="button" onClick={timer.reset} className="underline">
+                discard it
+              </button>
+              .
+            </p>
+          ) : (
+            <div className="flex flex-wrap items-center gap-3">
+              <span
+                className={`min-w-32 font-mono text-4xl tabular-nums ${timer.running && ownsTimer ? '' : 'text-gray-400 dark:text-gray-500'}`}
+                aria-label="Timer"
+              >
+                {formatDuration(elapsedMs)}
+              </span>
+              {/* type="button": a plain <button> inside a form would submit it. */}
+              {timer.running ? (
+                <button type="button" onClick={timer.pause} className={secondaryButtonClass}>
+                  Pause
+                </button>
+              ) : ownsTimer ? (
+                <button
+                  type="button"
+                  onClick={() => timer.start(problem.id)}
+                  className={primaryButtonClass}
+                >
+                  Resume
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => {
+                    timer.start(problem.id)
+                    // Called straight from the click, so popup blockers allow it.
+                    window.open(problem.link, '_blank', 'noopener,noreferrer')
+                  }}
+                  className={primaryButtonClass}
+                >
+                  Start problem <span aria-hidden="true">↗</span>
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={timer.reset}
+                disabled={!ownsTimer}
+                className={ghostButtonClass}
+              >
+                Reset
+              </button>
+            </div>
+          )}
+          <div className="flex flex-wrap items-center gap-2 text-sm">
+            <label htmlFor="minutes">Or enter minutes</label>
+            <input
+              id="minutes"
+              type="number"
+              min={0}
+              max={24 * 60}
+              value={values.minutes}
+              onChange={update('minutes')}
+              className={`${inputClass} max-w-24`}
+              {...errorProps('minutes', fieldErrors.duration_seconds)}
+            />
+            <span className="text-gray-500 dark:text-gray-400">overrides the timer</span>
           </div>
-        )}
-        <label htmlFor="minutes" className="block">
-          Or enter minutes (overrides the timer)
-        </label>
-        <input
-          id="minutes"
-          type="number"
-          min={0}
-          max={24 * 60}
-          value={values.minutes}
-          onChange={update('minutes')}
-          className={inputClass}
-          {...errorProps('minutes', fieldErrors.duration_seconds)}
-        />
-        <FieldError id="minutes" error={fieldErrors.duration_seconds} />
+          <FieldError id="minutes" error={fieldErrors.duration_seconds} />
+        </div>
+
+        <div className="grid gap-6 p-5 sm:grid-cols-2">
+          <fieldset className="space-y-2">
+            <legend className={sectionLabelClass}>Result</legend>
+            <div className="grid grid-cols-2 gap-2">
+              {[
+                ['yes', 'Solved'],
+                ['no', 'Not solved'],
+              ].map(([value, label]) => (
+                <label key={value} className={choiceClass}>
+                  <input
+                    type="radio"
+                    name="solved"
+                    value={value}
+                    required
+                    checked={values.solved === value}
+                    onChange={update('solved')}
+                    className="sr-only"
+                  />
+                  {label}
+                </label>
+              ))}
+            </div>
+          </fieldset>
+
+          <fieldset className="space-y-2">
+            <legend className={sectionLabelClass}>Confidence</legend>
+            <div className="grid grid-cols-5 gap-2">
+              {['1', '2', '3', '4', '5'].map((value) => (
+                <label key={value} className={choiceClass}>
+                  <input
+                    type="radio"
+                    name="confidence"
+                    value={value}
+                    required
+                    checked={values.confidence === value}
+                    onChange={update('confidence')}
+                    className="sr-only"
+                  />
+                  {value}
+                </label>
+              ))}
+            </div>
+            <p className="flex justify-between text-xs text-gray-500 dark:text-gray-400">
+              <span>1 = shaky</span>
+              <span>5 = could redo it cold</span>
+            </p>
+          </fieldset>
+        </div>
+
+        <div className="grid items-end gap-4 p-5 sm:grid-cols-2">
+          <Field id="attempted-on" label="Date (leave blank for today)" error={fieldErrors.attempted_on}>
+            <input
+              id="attempted-on"
+              type="date"
+              // en-CA formats as YYYY-MM-DD. Just a hint; the server enforces "not in the future".
+              max={new Date().toLocaleDateString('en-CA')}
+              value={values.attemptedOn}
+              onChange={update('attemptedOn')}
+              className={inputClass}
+              {...errorProps('attempted-on', fieldErrors.attempted_on)}
+            />
+          </Field>
+          <label className="flex items-center gap-2 py-2">
+            <input
+              type="checkbox"
+              checked={values.usedHint}
+              onChange={(event) => setValues((v) => ({ ...v, usedHint: event.target.checked }))}
+              className="size-4 accent-blue-600"
+            />
+            Used a hint
+          </label>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-3 p-5">
+          <button type="submit" disabled={submitting} className={submitClass}>
+            {submitting ? 'Saving…' : 'Log attempt'}
+          </button>
+          {message && (
+            <p role="alert" className="text-red-600 dark:text-red-400">
+              {message}
+            </p>
+          )}
+          {logged && (
+            <p role="status" className="text-green-700 dark:text-green-400">
+              Logged attempt for {problem.title}.
+            </p>
+          )}
+        </div>
       </div>
-
-      <fieldset className="space-y-1">
-        <legend className="font-medium">Result</legend>
-        <div className="flex gap-4">
-          {[
-            ['yes', 'Solved'],
-            ['no', 'Not solved'],
-          ].map(([value, label]) => (
-            <label key={value} className="flex items-center gap-1">
-              <input
-                type="radio"
-                name="solved"
-                value={value}
-                required
-                checked={values.solved === value}
-                onChange={update('solved')}
-              />
-              {label}
-            </label>
-          ))}
-        </div>
-      </fieldset>
-
-      <fieldset className="space-y-1">
-        <legend className="font-medium">Confidence (1 = shaky, 5 = could redo it cold)</legend>
-        <div className="flex gap-4">
-          {['1', '2', '3', '4', '5'].map((value) => (
-            <label key={value} className="flex items-center gap-1">
-              <input
-                type="radio"
-                name="confidence"
-                value={value}
-                required
-                checked={values.confidence === value}
-                onChange={update('confidence')}
-              />
-              {value}
-            </label>
-          ))}
-        </div>
-      </fieldset>
-
-      <label className="flex items-center gap-2">
-        <input
-          type="checkbox"
-          checked={values.usedHint}
-          onChange={(event) => setValues((v) => ({ ...v, usedHint: event.target.checked }))}
-        />
-        Used a hint
-      </label>
-
-      <Field id="attempted-on" label="Date (leave blank for today)" error={fieldErrors.attempted_on}>
-        <input
-          id="attempted-on"
-          type="date"
-          // en-CA formats as YYYY-MM-DD. Just a hint; the server enforces "not in the future".
-          max={new Date().toLocaleDateString('en-CA')}
-          value={values.attemptedOn}
-          onChange={update('attemptedOn')}
-          className={inputClass}
-          {...errorProps('attempted-on', fieldErrors.attempted_on)}
-        />
-      </Field>
-
-      {message && (
-        <p role="alert" className="text-red-600 dark:text-red-400">
-          {message}
-        </p>
-      )}
-      {logged && (
-        <p role="status" className="text-green-700 dark:text-green-400">
-          Logged attempt for {problem.title}.
-        </p>
-      )}
-
-      <button type="submit" disabled={submitting} className={submitClass}>
-        {submitting ? 'Saving…' : 'Log attempt'}
-      </button>
     </form>
   )
 }

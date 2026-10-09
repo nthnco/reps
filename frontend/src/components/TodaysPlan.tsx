@@ -5,6 +5,7 @@ import { useTodaysPlan } from '../api/queries'
 import { formatDueDate } from '../dates'
 import { formatMinutes, plural } from '../format'
 import { DifficultyBadge } from './DifficultyBadge'
+import { cardClass } from './fields'
 import { PremiumBadge } from './PremiumBadge'
 
 // The backend sends the reason as a kind; pattern labels only live here.
@@ -85,7 +86,7 @@ function PlanList({
 }) {
   // Keeps the API's order: the new problem, then most overdue first.
   return (
-    <ul className="divide-y divide-gray-200 rounded border border-gray-200 dark:divide-gray-700 dark:border-gray-700">
+    <ul className={`divide-y divide-gray-100 dark:divide-gray-800 ${cardClass}`}>
       {items.map(({ problem, due_on, estimate_seconds, done }) => (
         <li key={problem.id} className="flex items-center justify-between gap-4 p-3">
           <div className={done ? 'opacity-60' : undefined}>

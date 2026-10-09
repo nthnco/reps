@@ -5,6 +5,7 @@ import { PATTERN_LABELS, STAGES } from '../api/labels'
 import { usePatternMastery, useProblems, useTodaysPlan } from '../api/queries'
 import { toPercent } from '../format'
 import { DifficultyBadge } from './DifficultyBadge'
+import { cardClass } from './fields'
 import { PremiumBadge } from './PremiumBadge'
 
 const DIFFICULTY_ORDER: Record<Difficulty, number> = { easy: 0, medium: 1, hard: 2 }
@@ -103,10 +104,10 @@ function PatternCard({
       aria-expanded={isOpen}
       aria-controls={`panel-${pattern}`}
       onClick={onToggle}
-      className={`space-y-1 rounded border p-3 text-left hover:bg-gray-50 dark:hover:bg-gray-800 ${
+      className={`space-y-1 rounded-lg border bg-white p-3 text-left shadow-sm transition hover:shadow-md dark:bg-gray-900 ${
         isOpen
-          ? 'border-gray-500 bg-gray-50 dark:border-gray-400 dark:bg-gray-800'
-          : 'border-gray-200 dark:border-gray-700'
+          ? 'border-gray-500 dark:border-gray-400'
+          : 'border-gray-200 hover:border-gray-300 dark:border-gray-800 dark:hover:border-gray-600'
       } ${isNext ? 'ring-2 ring-blue-500' : ''}`}
     >
       <span className="flex items-baseline justify-between gap-2">
@@ -132,30 +133,39 @@ function PatternCard({
   )
 }
 
-const TIERS: [Difficulty, string][] = [
-  ['easy', 'E'],
-  ['medium', 'M'],
-  ['hard', 'H'],
+// Darker shades than the badges because these sit on a white card with no
+// badge background. Amber rather than yellow: yellow-700 reads as a heavy
+// brown and outweighs the other two.
+const TIERS: [Difficulty, string, string][] = [
+  ['easy', 'E', 'text-green-700 dark:text-green-400'],
+  ['medium', 'M', 'text-amber-600 dark:text-amber-400'],
+  ['hard', 'H', 'text-red-700 dark:text-red-400'],
 ]
 
 /** "E 1/1 · M 1/4 · H 0/1"; a tier the pattern has no problems in is muted. */
 function TierCounts({ row }: { row: PatternMasteryRead }) {
   return (
     <span className="text-gray-700 tabular-nums dark:text-gray-300">
-      {TIERS.map(([tier, letter], i) => (
-        <span key={tier} className={row.total_by_tier[tier] === 0 ? 'text-gray-400 dark:text-gray-600' : ''}>
-          {i > 0 && ' · '}
-          {letter} {row.solved_by_tier[tier]}/{row.total_by_tier[tier]}
-        </span>
-      ))}
+      {TIERS.map(([tier, letter, color], i) => {
+        const empty = row.total_by_tier[tier] === 0
+        return (
+          <span key={tier}>
+            {i > 0 && ' · '}
+            <span className={empty ? 'text-gray-400 dark:text-gray-600' : ''}>
+              <span className={empty ? '' : color}>{letter}</span>{' '}
+              {row.solved_by_tier[tier]}/{row.total_by_tier[tier]}
+            </span>
+          </span>
+        )
+      })}
     </span>
   )
 }
 
 function ProblemPanel({ pattern, problems }: { pattern: Pattern; problems: ProblemRead[] }) {
   return (
-    <div id={`panel-${pattern}`} className="rounded border border-gray-200 dark:border-gray-700">
-      <h4 className="border-b border-gray-200 p-3 font-medium dark:border-gray-700">
+    <div id={`panel-${pattern}`} className={cardClass}>
+      <h4 className="border-b border-gray-100 p-3 font-medium dark:border-gray-800">
         {PATTERN_LABELS[pattern]}
       </h4>
       {problems.length === 0 ? (
