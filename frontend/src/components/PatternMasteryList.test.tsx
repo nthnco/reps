@@ -57,10 +57,9 @@ test('shows the details, due count, decay, and peak marker', async () => {
 
   await screen.findAllByRole('meter')
   const row = rowFor('stack')
-  expect(row).toHaveTextContent(
-    '5 attempts · 3 problems · last practiced Oct 3 · median 18 min · 2 due',
-  )
-  expect(row).toHaveTextContent('Down from 90% since you last practiced')
+  expect(row).toHaveTextContent('5 attempts · 3 problems · last practiced Oct 3 · median 18 min')
+  expect(row).toHaveTextContent('2 due')
+  expect(row).toHaveTextContent('Down from 90%')
   expect(within(row).getByTitle('Peak 95%')).toBeInTheDocument()
   expect(row).not.toHaveTextContent('Low data')
 })

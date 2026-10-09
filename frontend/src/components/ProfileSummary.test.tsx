@@ -64,6 +64,16 @@ test('shows the overall rating and what it averages over', async () => {
   expect(screen.getByText(/^The average/)).toBeInTheDocument()
 })
 
+test('ranks by the rounded percent shown, so 89.6% reads as 90% Bulletproof', async () => {
+  getProfileSummaryMock.mockResolvedValue(summaryWith({ stack: 0.9, heap: 0.9 }, { overall: 0.896 }))
+  renderWithProviders(<ProfileSummary />)
+
+  expect(await screen.findByRole('meter', { name: 'Overall rating' })).toHaveAttribute(
+    'aria-valuetext',
+    '90%, Bulletproof',
+  )
+})
+
 test('shows weights only when they differ', async () => {
   const summary = summaryWith({ stack: 0.9, heap: 0.7 }, { overall: 0.85 })
   summary.breakdown = summary.breakdown.map((part) =>

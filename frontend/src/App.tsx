@@ -1,17 +1,25 @@
 import { useQueryClient } from '@tanstack/react-query'
 import { useEffect, type ReactNode } from 'react'
-import { Link, Route, Routes } from 'react-router'
+import { Link, NavLink, Route, Routes } from 'react-router'
 import { logout } from './api/auth'
 import { setUnauthorizedHandler } from './api/errors'
 import { queryKeys, useMe } from './api/queries'
 import { AddProblemForm } from './components/AddProblemForm'
-import { primaryButtonClass, secondaryButtonClass } from './components/fields'
+import { ghostButtonClass, primaryButtonClass, secondaryButtonClass } from './components/fields'
 import { LoginPage } from './components/LoginPage'
 import { PatternMasteryList } from './components/PatternMasteryList'
 import { ProblemList } from './components/ProblemList'
 import { ProblemPage } from './components/ProblemPage'
 import { ProfileSummary } from './components/ProfileSummary'
 import { TodaysPlan } from './components/TodaysPlan'
+
+function navLinkClass({ isActive }: { isActive: boolean }) {
+  return `rounded-md px-3 py-1.5 font-medium ${
+    isActive
+      ? 'bg-gray-100 text-gray-900 dark:bg-gray-800 dark:text-gray-100'
+      : 'text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100'
+  }`
+}
 
 function HomePage() {
   return (
@@ -32,7 +40,7 @@ function Narrow({ children }: { children: ReactNode }) {
 function AddProblemPage() {
   return (
     <div className="space-y-6">
-      <Link to="/" className="text-blue-700 hover:underline dark:text-blue-400">
+      <Link to="/" className={`inline-block text-sm ${secondaryButtonClass}`}>
         ← All problems
       </Link>
       <AddProblemForm />
@@ -77,34 +85,45 @@ function App() {
   }
 
   return (
-    <main className="mx-auto max-w-6xl space-y-10 p-4">
-      <header className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">
-          <Link to="/">Reps</Link>
-        </h1>
-        {/* Navigation stays as links (styled as buttons) so open-in-new-tab still works. */}
-        <nav className="flex items-center gap-2 text-sm">
-          <Link to="/problems/new" className={primaryButtonClass}>
-            Add problem
-          </Link>
-          <Link to="/patterns" className={secondaryButtonClass}>
-            Mastery
-          </Link>
-          {/* Gate off (local dev): there's no username and nothing to log out of. */}
-          {me.data.username && (
-            <button type="button" onClick={handleLogout} className={secondaryButtonClass}>
-              Log out
-            </button>
-          )}
-        </nav>
+    <>
+      <header className="sticky top-0 z-10 border-b border-gray-200 bg-white/90 backdrop-blur dark:border-gray-800 dark:bg-gray-900/90">
+        <div className="mx-auto flex h-14 max-w-6xl items-center justify-between gap-4 px-4">
+          <div className="flex items-center gap-6">
+            <h1 className="text-lg font-bold tracking-tight">
+              <Link to="/">Reps</Link>
+            </h1>
+            {/* Links, not buttons, so open-in-new-tab still works. */}
+            <nav className="flex items-center gap-1 text-sm">
+              <NavLink to="/" end className={navLinkClass}>
+                Today
+              </NavLink>
+              <NavLink to="/patterns" className={navLinkClass}>
+                Mastery
+              </NavLink>
+            </nav>
+          </div>
+          <div className="flex items-center gap-2 text-sm">
+            <Link to="/problems/new" className={primaryButtonClass}>
+              Add problem
+            </Link>
+            {/* Gate off (local dev): there's no username and nothing to log out of. */}
+            {me.data.username && (
+              <button type="button" onClick={handleLogout} className={ghostButtonClass}>
+                Log out
+              </button>
+            )}
+          </div>
+        </div>
       </header>
-      <Routes>
-        <Route path="/" element={<HomePage />} />
-        <Route path="/patterns" element={<Narrow><MasteryPage /></Narrow>} />
-        <Route path="/problems/new" element={<Narrow><AddProblemPage /></Narrow>} />
-        <Route path="/problems/:id" element={<Narrow><ProblemPage /></Narrow>} />
-      </Routes>
-    </main>
+      <main className="mx-auto max-w-6xl space-y-10 px-4 py-8">
+        <Routes>
+          <Route path="/" element={<HomePage />} />
+          <Route path="/patterns" element={<Narrow><MasteryPage /></Narrow>} />
+          <Route path="/problems/new" element={<Narrow><AddProblemPage /></Narrow>} />
+          <Route path="/problems/:id" element={<Narrow><ProblemPage /></Narrow>} />
+        </Routes>
+      </main>
+    </>
   )
 }
 

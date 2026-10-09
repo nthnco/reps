@@ -3,6 +3,7 @@ import { PATTERN_LABELS } from '../api/labels'
 import { usePatternMastery } from '../api/queries'
 import { formatDueDate } from '../dates'
 import { formatMinutes, plural, toPercent } from '../format'
+import { cardClass } from './fields'
 
 function MasteryBar({ row }: { row: PatternMasteryRead }) {
   const shown = toPercent(row.displayed_mastery)
@@ -65,48 +66,67 @@ function PatternRow({ row }: { row: PatternMasteryRead }) {
   const next = nextSteps(row)
 
   return (
-    <li className={`space-y-1.5 p-3 ${untouched ? 'text-gray-500 dark:text-gray-400' : ''}`}>
-      <div className="flex items-baseline justify-between gap-4">
-        <span className="font-medium">
-          {PATTERN_LABELS[row.pattern]}
+    <li className={`space-y-2 px-4 py-3 ${untouched ? 'text-gray-500 dark:text-gray-400' : ''}`}>
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="font-medium">{PATTERN_LABELS[row.pattern]}</span>
+          {row.due_count > 0 && (
+            <span className={`${badgeClass} bg-amber-50 text-amber-800 ring-amber-200 dark:bg-amber-900/30 dark:text-amber-300 dark:ring-amber-800`}>
+              {row.due_count} due
+            </span>
+          )}
           {row.low_data && !untouched && (
-            <span className="ml-2 rounded bg-gray-100 px-1.5 py-0.5 text-xs font-normal text-gray-600 dark:bg-gray-800 dark:text-gray-400">
+            <span className={`${badgeClass} bg-gray-50 text-gray-600 ring-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:ring-gray-700`}>
               Low data
             </span>
           )}
           {row.covered && (
             <span
               title="2+ mediums solved, one without a hint"
-              className="ml-2 rounded bg-blue-50 px-1.5 py-0.5 text-xs font-normal text-blue-700 dark:bg-blue-900/40 dark:text-blue-300"
+              className={`${badgeClass} bg-blue-50 text-blue-700 ring-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:ring-blue-800`}
             >
               Covered
             </span>
           )}
-        </span>
-        <span className="shrink-0 tabular-nums">{untouched ? '—' : `${shown}%`}</span>
+        </div>
+        <div className="shrink-0 text-right">
+          <p className="text-lg leading-none font-semibold tabular-nums">
+            {untouched ? '—' : `${shown}%`}
+          </p>
+          {raw > shown && (
+            <p title="Since you last practiced" className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+              Down from {raw}%
+            </p>
+          )}
+        </div>
       </div>
       <MasteryBar row={row} />
-      <p className="text-sm text-gray-600 dark:text-gray-400">
-        {details(row)}
-        {row.due_count > 0 && (
-          <span className="font-medium text-amber-700 dark:text-amber-400">
-            {' · '}
-            {row.due_count} due
-          </span>
-        )}
-      </p>
-      {raw > shown && (
-        <p className="text-sm text-gray-600 dark:text-gray-400">
-          Down from {raw}% since you last practiced
+      <p className="text-xs text-gray-500 dark:text-gray-400">{details(row)}</p>
+      {next && (
+        <p className="rounded-md bg-blue-50 px-2.5 py-1.5 text-xs text-blue-800 dark:bg-blue-900/30 dark:text-blue-300">
+          {next}
         </p>
       )}
-      {next && <p className="text-sm text-blue-700 dark:text-blue-400">{next}</p>}
     </li>
+  )
+}
+
+const badgeClass = 'rounded px-1.5 py-0.5 text-xs font-medium ring-1 ring-inset'
+
+function RowList({ label, rows }: { label: string; rows: PatternMasteryRead[] }) {
+  return (
+    <ul aria-label={label} className={`divide-y divide-gray-100 dark:divide-gray-800 ${cardClass}`}>
+      {rows.map((row) => (
+        <PatternRow key={row.pattern} row={row} />
+      ))}
+    </ul>
   )
 }
 
 export function PatternMasteryList() {
   const mastery = usePatternMastery()
+  const started = mastery.data?.filter((row) => row.attempt_count > 0) ?? []
+  const notStarted = mastery.data?.filter((row) => row.attempt_count === 0) ?? []
 
   return (
     <section className="space-y-4">
@@ -120,14 +140,20 @@ export function PatternMasteryList() {
         </p>
       ) : (
         <>
-          {mastery.data.every((row) => row.attempt_count === 0) && (
+          {started.length === 0 ? (
             <p>No attempts yet. Log an attempt and its pattern starts filling in here.</p>
+          ) : (
+            <RowList label="Started" rows={started} />
           )}
-          <ul className="divide-y divide-gray-200 rounded border border-gray-200 dark:divide-gray-700 dark:border-gray-700">
-            {mastery.data.map((row) => (
-              <PatternRow key={row.pattern} row={row} />
-            ))}
-          </ul>
+          {notStarted.length > 0 && (
+            // Split off so the few patterns with real numbers aren't lost among empty rows.
+            <div className="space-y-2">
+              <h3 className="text-xs font-semibold tracking-wide text-gray-600 uppercase dark:text-gray-400">
+                Not attempted yet
+              </h3>
+              <RowList label="Not attempted yet" rows={notStarted} />
+            </div>
+          )}
         </>
       )}
     </section>
