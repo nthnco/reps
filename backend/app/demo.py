@@ -7,6 +7,10 @@ with SQLAlchemy's schema_translate_map (`problems` becomes
 `demo_<id>.problems`). Route code doesn't change, and there's no per-query
 visitor filter that a new route could forget.
 
+New workspaces are copies of `demo_template`: the preloaded problems plus a
+generated practice history ending yesterday (see demo_history.py), rebuilt
+once a day and after every restart.
+
 The demo is meant for a few minutes' look, so the limits are low: a workspace
 lasts an hour from creation, at most MAX_WORKSPACES exist (the oldest is
 dropped first), and each takes only a handful of new rows. Old workspaces are
@@ -20,13 +24,19 @@ from dataclasses import dataclass
 from datetime import timedelta
 
 from fastapi import Request
-from sqlalchemy import Connection, event, func, select, text
+from sqlalchemy import Connection, Table, event, func, select, text
 from sqlalchemy.orm import Session
 
+from app import demo_history
+from app.clock import local_today
 from app.db import engine
 from app.models import Attempt, Base, Problem
 
 WORKSPACE_KEY = "demo_workspace"
+TEMPLATE = "demo_template"
+# From metadata rather than Model.__table__, which pyright types as a plain FromClause.
+_PROBLEMS = Base.metadata.tables[Problem.__tablename__]
+_ATTEMPTS = Base.metadata.tables[Attempt.__tablename__]
 LIFETIME = timedelta(hours=1)
 MAX_WORKSPACES = 50
 MAX_NEW_PROBLEMS = 10
@@ -90,6 +100,10 @@ def setup_registry() -> None:
                 """
             )
         )
+        conn.execute(text("CREATE TABLE IF NOT EXISTS demo_meta.template (built_on date NOT NULL)"))
+        # A restart is usually a deploy, which may have changed the problems
+        # or the plan logic, so the next new workspace rebuilds the template.
+        conn.execute(text("DELETE FROM demo_meta.template"))
 
 
 def workspace_schema(request: Request) -> str:
@@ -142,6 +156,48 @@ def _drop_stale(conn: Connection) -> None:
     _drop(conn, list(stale))
 
 
+def _create_tables(conn: Connection, schema: str) -> None:
+    conn.execute(text(f'CREATE SCHEMA "{schema}"'))
+    Base.metadata.create_all(conn.execution_options(schema_translate_map={None: schema}))
+
+
+def _copy(conn: Connection, source: str, dest: str, table: Table) -> int:
+    """Copy every row, ids included, and return how many there were."""
+    # Named columns: tables built by Alembic can order them differently.
+    columns = ", ".join(f'"{c.name}"' for c in table.columns)
+    copied = conn.execute(
+        text(
+            f'INSERT INTO "{dest}".{table.name} ({columns}) '
+            f'SELECT {columns} FROM "{source}".{table.name}'
+        )
+    ).rowcount
+    # The copied ids skipped the sequence, so move it past them.
+    conn.execute(
+        text(
+            f"SELECT setval(pg_get_serial_sequence('\"{dest}\".{table.name}', 'id'), "
+            f'coalesce(max(id), 0) + 1, false) FROM "{dest}".{table.name}'
+        )
+    )
+    return copied
+
+
+def _ensure_template(conn: Connection) -> None:
+    """Rebuild the sample data every new workspace copies, if it's from an earlier day."""
+    today = local_today()
+    if conn.scalar(text("SELECT built_on FROM demo_meta.template")) == today:
+        return
+    conn.execute(text(f'DROP SCHEMA IF EXISTS "{TEMPLATE}" CASCADE'))
+    _create_tables(conn, TEMPLATE)
+    # The demo database is migrated like any other, so `public` holds the
+    # preloaded problems (and anything a later data migration adds).
+    _copy(conn, "public", TEMPLATE, _PROBLEMS)
+    template = conn.execution_options(schema_translate_map={None: TEMPLATE})
+    with Session(template) as db:
+        demo_history.generate(db, today)
+    conn.execute(text("DELETE FROM demo_meta.template"))
+    conn.execute(text("INSERT INTO demo_meta.template (built_on) VALUES (:today)"), {"today": today})
+
+
 def ensure_workspace(schema: str) -> Baseline:
     """Make sure the visitor has a live workspace, creating a fresh one if not."""
     with engine.begin() as conn:
@@ -153,11 +209,14 @@ def ensure_workspace(schema: str) -> Baseline:
         if baseline := _live_baseline(conn, schema):
             return baseline
         _drop_stale(conn)
+        _ensure_template(conn)
         # Also clears anything left of an expired or half-made one by this name.
         _drop(conn, [schema])
-        conn.execute(text(f'CREATE SCHEMA "{schema}"'))
-        Base.metadata.create_all(conn.execution_options(schema_translate_map={None: schema}))
-        baseline = Baseline(problems=0, attempts=0)
+        _create_tables(conn, schema)
+        baseline = Baseline(
+            problems=_copy(conn, TEMPLATE, schema, _PROBLEMS),
+            attempts=_copy(conn, TEMPLATE, schema, _ATTEMPTS),
+        )
         conn.execute(
             text(
                 """

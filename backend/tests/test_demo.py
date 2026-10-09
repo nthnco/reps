@@ -1,70 +1,96 @@
+from datetime import timedelta
+
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import text
 
-from app.db import engine, get_db
 from app import demo as demo_module
+from app.clock import local_today
+from app.db import engine, get_db
 from app.demo import get_workspace_db, load_demo_config, setup_registry
+from app.demo_history import DAYS
 from app.main import app
-
-TWO_SUM = {
-    "title": "Two Sum",
-    "link": "https://leetcode.com/problems/two-sum/",
-    "pattern": "arrays_hashing",
-    "difficulty": "easy",
-}
 
 
 def problem(slug: str) -> dict:
-    return TWO_SUM | {"title": slug, "link": f"https://leetcode.com/problems/{slug}/"}
+    return {
+        "title": slug,
+        "link": f"https://leetcode.com/problems/{slug}/",
+        "pattern": "arrays_hashing",
+        "difficulty": "easy",
+    }
 
 
+# Not in the NeetCode preload, so it's new in every workspace.
+NEW = problem("demo-test-problem")
 ATTEMPT = {"solved": True, "duration_seconds": 600, "confidence": 3}
 
 
-@pytest.fixture
-def demo(migrated_db):
-    """Demo routing on. Workspaces commit for real, so drop them afterwards."""
+def titles(client: TestClient) -> set[str]:
+    return {p["title"] for p in client.get("/api/problems").json()}
+
+
+@pytest.fixture(scope="session")
+def demo_registry(migrated_db):
+    # Once per run: setup forces a template rebuild, which takes a moment.
     setup_registry()
+
+
+@pytest.fixture
+def demo(demo_registry):
+    """Demo routing on. Workspaces commit for real, so drop them afterwards."""
     app.dependency_overrides[get_db] = get_workspace_db
     yield
     app.dependency_overrides.clear()
     with engine.begin() as conn:
-        names = conn.scalars(text(r"SELECT nspname FROM pg_namespace WHERE nspname LIKE 'demo\_%'"))
-        for name in list(names):
-            conn.execute(text(f'DROP SCHEMA "{name}" CASCADE'))
+        for schema in conn.scalars(text("SELECT schema_name FROM demo_meta.workspaces")).all():
+            conn.execute(text(f'DROP SCHEMA IF EXISTS "{schema}" CASCADE'))
+        conn.execute(text("DELETE FROM demo_meta.workspaces"))
+
+
+def test_new_visitors_start_with_sample_history(demo):
+    visitor = TestClient(app)
+
+    assert len(titles(visitor)) == 150
+    assert visitor.get("/api/plan/today").json()["items"]
+    with engine.connect() as conn:
+        first, last = conn.execute(
+            text("SELECT min(attempted_on), max(attempted_on) FROM demo_template.attempts")
+        ).one()
+    today = local_today()
+    assert today - timedelta(days=DAYS) <= first and last < today
 
 
 def test_each_visitor_sees_only_their_own_changes(demo):
     alice, bob = TestClient(app), TestClient(app)
 
-    assert alice.post("/api/problems", json=TWO_SUM).status_code == 201
+    assert alice.post("/api/problems", json=NEW).status_code == 201
 
-    assert [p["title"] for p in alice.get("/api/problems").json()] == ["Two Sum"]
-    assert bob.get("/api/problems").json() == []
+    assert "demo-test-problem" in titles(alice)
+    assert "demo-test-problem" not in titles(bob)
     # Same link in another workspace isn't a duplicate.
-    assert bob.post("/api/problems", json=TWO_SUM).status_code == 201
+    assert bob.post("/api/problems", json=NEW).status_code == 201
 
 
 def test_workspace_starts_over_after_its_lifetime(demo):
     visitor = TestClient(app)
-    visitor.post("/api/problems", json=TWO_SUM)
+    visitor.post("/api/problems", json=NEW)
     with engine.begin() as conn:
         conn.execute(text("UPDATE demo_meta.workspaces SET created_at = now() - interval '61 minutes'"))
 
-    assert visitor.get("/api/problems").json() == []
+    assert "demo-test-problem" not in titles(visitor)
 
 
 def test_oldest_workspace_is_dropped_to_make_room(demo, monkeypatch):
     monkeypatch.setattr(demo_module, "MAX_WORKSPACES", 2)
     first, second, third = TestClient(app), TestClient(app), TestClient(app)
     for visitor in (first, second, third):
-        assert visitor.post("/api/problems", json=TWO_SUM).status_code == 201
+        assert visitor.post("/api/problems", json=NEW).status_code == 201
 
-    assert len(second.get("/api/problems").json()) == 1
-    assert len(third.get("/api/problems").json()) == 1
-    # first's workspace was evicted; asking again gives it a fresh, empty one.
-    assert first.get("/api/problems").json() == []
+    assert "demo-test-problem" in titles(second)
+    assert "demo-test-problem" in titles(third)
+    # first's workspace was evicted; asking again gives it a fresh copy.
+    assert "demo-test-problem" not in titles(first)
 
 
 def test_new_problems_are_capped(demo, monkeypatch):
@@ -82,7 +108,7 @@ def test_new_problems_are_capped(demo, monkeypatch):
 def test_new_attempts_are_capped(demo, monkeypatch):
     monkeypatch.setattr(demo_module, "MAX_NEW_ATTEMPTS", 2)
     visitor = TestClient(app)
-    problem_id = visitor.post("/api/problems", json=TWO_SUM).json()["id"]
+    problem_id = visitor.post("/api/problems", json=NEW).json()["id"]
     url = f"/api/problems/{problem_id}/attempts"
     assert visitor.post(url, json=ATTEMPT).status_code == 201
     assert visitor.post(url, json=ATTEMPT).status_code == 201
