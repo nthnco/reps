@@ -1,6 +1,7 @@
 # Knowledge graph
 
-What I've learned building Reps, updated after each leaf's quiz.
+What I've learned building Reps, updated after each leaf's quiz. Backend
+and TSX/React only; CSS and styling aren't tracked.
 
 - **Introduced**: seen it explained once.
 - **Practicing**: answered quiz questions on it, with help.

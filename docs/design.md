@@ -23,10 +23,10 @@ is both a CSS variable (`var(--color-card)`) and a utility (`bg-card`).
 
 | Token            | Value     | Used for                                          |
 | ---------------- | --------- | ------------------------------------------------- |
-| `bg`             | `#0c0e12` | page background                                   |
+| `page`           | `#0c0e12` | page background                                   |
 | `card`           | `#12151b` | cards                                             |
-| `border`         | `#232831` | all 1px borders                                   |
-| `text`           | `#e6e8ec` | body text                                         |
+| `line`           | `#232831` | all 1px borders                                   |
+| `ink`            | `#e6e8ec` | body text                                         |
 | `muted`          | `#8b93a1` | secondary text                                    |
 | `accent`         | `#f5a524` | primary buttons, selected options, skill gain     |
 | `on-accent`      | `#1a1204` | text on amber                                     |
