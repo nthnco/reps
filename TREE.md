@@ -146,9 +146,11 @@ Build next, in this order: 8, 9, 7, 10, 11. The rest wait.
       IBM Plex via fontsource; the app goes dark only.
       Learn: CSS custom properties, Tailwind v4 theme variables, tabular
       numbers.
-    - [ ] **Shared components**: Button, SegmentedChoice, Card, Label.
-      Learn: component APIs (props, variants), radio-group accessibility,
-      44px tap targets.
+    - [x] **Shared components**: SegmentedChoice, plus button and label
+      class strings in `fields.tsx` next to the old ones (other pages keep
+      theirs). Card and Button components dropped as overbuilt; extract
+      one if the two screens repeat it. Learn: component props, generic
+      components, radio-group accessibility, 44px tap targets.
     - [ ] **Time field**: one field the timer fills; typing stops the timer
       and wins. Learn: controlled inputs, syncing an input with a running
       timer, parsing "14" and "14:30".

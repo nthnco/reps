@@ -26,6 +26,21 @@ export const ghostButtonClass =
 export const cardClass =
   'rounded-lg border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900'
 
+// Log screen redesign (docs/design.md). The classes above keep styling the
+// other pages, which this redesign leaves alone.
+
+const tapTarget = 'inline-flex min-h-11 items-center justify-center gap-2 rounded-button px-4 font-medium disabled:opacity-50'
+
+export const accentButtonClass = `${tapTarget} bg-accent text-on-accent hover:bg-accent/90`
+
+export const outlineButtonClass = `${tapTarget} border border-line text-ink hover:bg-line/50`
+
+/** Steel blue outline: the Start problem button. */
+export const linkButtonClass = `${tapTarget} border border-link text-link hover:bg-link/10`
+
+/** Small mono caps for section names and legends. */
+export const labelClass = 'font-mono text-xs font-medium tracking-wide text-muted uppercase'
+
 /** Marks an input invalid and links it to its error text (read by screen readers). */
 export function errorProps(id: string, error: string | undefined) {
   return error ? { 'aria-invalid': true, 'aria-describedby': `${id}-error` } : {}

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { elapsedMs, IDLE, isTimerState, pause, start, type TimerState } from './timer'
+import { elapsedMs, IDLE, isTimerState, pause, setElapsed, start, type TimerState } from './timer'
 
 export const STORAGE_KEY = 'reps.timer'
 
@@ -42,10 +42,11 @@ export function useTimer() {
     problemId: state.problemId,
     running,
     elapsedMs: elapsedMs(state, now),
-    start: (problemId: number) => {
+    /** `fromMs` continues from a typed time instead of the timer's own. */
+    start: (problemId: number, fromMs?: number) => {
       const t = Date.now()
       setNow(t)
-      setState((s) => start(s, t, problemId))
+      setState((s) => start(fromMs === undefined ? s : setElapsed(s, fromMs, problemId), t, problemId))
     },
     pause: () => {
       const t = Date.now()

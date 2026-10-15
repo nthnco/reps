@@ -4,7 +4,7 @@ import { Link } from 'react-router'
 import { createAttempt, type AttemptFieldErrors } from '../api/attempts'
 import type { AttemptCreate, ProblemRead } from '../api/generated'
 import { queryKeys, useProblems } from '../api/queries'
-import { formatDuration } from '../timer/timer'
+import { formatDuration, parseDuration } from '../timer/timer'
 import { useTimer } from '../timer/useTimer'
 import {
   cardClass,
@@ -12,15 +12,14 @@ import {
   errorProps,
   Field,
   FieldError,
-  ghostButtonClass,
   inputClass,
-  primaryButtonClass,
-  secondaryButtonClass,
+  labelClass,
+  linkButtonClass,
+  outlineButtonClass,
   submitClass,
 } from './fields'
 
 const EMPTY = {
-  minutes: '',
   solved: '', // 'yes' | 'no'
   confidence: '', // '1'..'5'
   usedHint: false,
@@ -29,6 +28,7 @@ const EMPTY = {
 type FormValues = typeof EMPTY
 
 const LONG_TIMER_SECONDS = 3 * 60 * 60
+const BAD_TIME = 'Enter a time like 14 or 14:30.'
 
 const sectionLabelClass =
   'text-xs font-semibold tracking-wide text-gray-600 uppercase dark:text-gray-400'
@@ -43,6 +43,8 @@ export function LogAttemptForm({ problem }: { problem: ProblemRead }) {
   const otherProblemId = timer.problemId !== null && !ownsTimer ? timer.problemId : null
   const otherProblem = useProblems().data?.find((p) => p.id === otherProblemId)
   const [values, setValues] = useState<FormValues>(EMPTY)
+  // null: the time field shows the timer. A string: the user typed it, and it wins.
+  const [typedTime, setTypedTime] = useState<string | null>(null)
   const [fieldErrors, setFieldErrors] = useState<AttemptFieldErrors>({})
   const [message, setMessage] = useState<string | null>(null)
   const [logged, setLogged] = useState(false)
@@ -53,23 +55,46 @@ export function LogAttemptForm({ problem }: { problem: ProblemRead }) {
       setValues((current) => ({ ...current, [field]: event.target.value }))
   }
 
+  function handleTimeChange(event: ChangeEvent<HTMLInputElement>) {
+    // Pause, not reset, so Resume can continue from the typed time.
+    if (ownsTimer && timer.running) timer.pause()
+    setTypedTime(event.target.value)
+  }
+
+  /** Starts or resumes the timer, from the typed time if there is one. False if it doesn't parse. */
+  function startTimer(): boolean {
+    let fromMs: number | undefined
+    if (typedTime !== null) {
+      const seconds = parseDuration(typedTime)
+      if (seconds === null) {
+        setFieldErrors({ duration_seconds: BAD_TIME })
+        return false
+      }
+      fromMs = seconds * 1000
+    }
+    timer.start(problem.id, fromMs)
+    setTypedTime(null)
+    return true
+  }
+
   async function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault()
     setMessage(null)
     setLogged(false)
 
-    // Typed minutes win; otherwise use the timer.
     const durationSeconds =
-      values.minutes !== ''
-        ? Math.round(Number(values.minutes) * 60)
-        : Math.floor(elapsedMs / 1000)
-    if (values.minutes === '' && durationSeconds === 0) {
-      setFieldErrors({ duration_seconds: 'Start the timer or enter minutes.' })
+      typedTime !== null ? parseDuration(typedTime) : Math.floor(elapsedMs / 1000)
+    if (durationSeconds === null) {
+      setFieldErrors({ duration_seconds: BAD_TIME })
+      return
+    }
+    if (typedTime === null && durationSeconds === 0) {
+      setFieldErrors({ duration_seconds: 'Start the timer or enter a time.' })
       return
     }
     // A timer left running (e.g. overnight) would otherwise be logged silently.
     if (
-      values.minutes === '' &&
+      typedTime === null &&
       durationSeconds > LONG_TIMER_SECONDS &&
       !window.confirm(
         `The timer says ${formatDuration(elapsedMs)}. Log it anyway?\n\n` +
@@ -94,6 +119,7 @@ export function LogAttemptForm({ problem }: { problem: ProblemRead }) {
     if (result.ok) {
       setLogged(true)
       setValues(EMPTY)
+      setTypedTime(null)
       setFieldErrors({})
       if (ownsTimer) timer.reset()
       // The attempt moves this problem's next review date and its pattern's mastery.
@@ -112,7 +138,20 @@ export function LogAttemptForm({ problem }: { problem: ProblemRead }) {
 
       <div className={`divide-y divide-gray-100 dark:divide-gray-800 ${cardClass}`}>
         <div className="space-y-3 p-5">
-          <p className={sectionLabelClass}>Time</p>
+          <label htmlFor="duration" className={`block ${labelClass}`}>
+            Time
+          </label>
+          <input
+            id="duration"
+            type="text"
+            autoComplete="off"
+            placeholder="14 or 14:30"
+            value={typedTime ?? (elapsedMs > 0 ? formatDuration(elapsedMs) : '')}
+            onChange={handleTimeChange}
+            className="w-44 rounded-button border border-line bg-page px-3 py-2 text-3xl text-ink tabular-nums placeholder:text-base placeholder:text-muted focus:border-link focus:outline-none"
+            {...errorProps('duration', fieldErrors.duration_seconds)}
+          />
+          <FieldError id="duration" error={fieldErrors.duration_seconds} />
           {otherProblemId !== null ? (
             <p role="status">
               The timer is in use for{' '}
@@ -131,63 +170,40 @@ export function LogAttemptForm({ problem }: { problem: ProblemRead }) {
             </p>
           ) : (
             <div className="flex flex-wrap items-center gap-3">
-              <span
-                className={`min-w-32 font-mono text-4xl tabular-nums ${timer.running && ownsTimer ? '' : 'text-gray-400 dark:text-gray-500'}`}
-                aria-label="Timer"
-              >
-                {formatDuration(elapsedMs)}
-              </span>
               {/* type="button": a plain <button> inside a form would submit it. */}
               {timer.running ? (
-                <button type="button" onClick={timer.pause} className={secondaryButtonClass}>
+                <button type="button" onClick={timer.pause} className={outlineButtonClass}>
                   Pause
                 </button>
               ) : ownsTimer ? (
-                <button
-                  type="button"
-                  onClick={() => timer.start(problem.id)}
-                  className={primaryButtonClass}
-                >
+                <button type="button" onClick={startTimer} className={outlineButtonClass}>
                   Resume
                 </button>
               ) : (
                 <button
                   type="button"
                   onClick={() => {
-                    timer.start(problem.id)
                     // Called straight from the click, so popup blockers allow it.
-                    window.open(problem.link, '_blank', 'noopener,noreferrer')
+                    if (startTimer()) window.open(problem.link, '_blank', 'noopener,noreferrer')
                   }}
-                  className={primaryButtonClass}
+                  className={linkButtonClass}
                 >
                   Start problem <span aria-hidden="true">↗</span>
                 </button>
               )}
               <button
                 type="button"
-                onClick={timer.reset}
-                disabled={!ownsTimer}
-                className={ghostButtonClass}
+                onClick={() => {
+                  timer.reset()
+                  setTypedTime(null)
+                }}
+                disabled={!ownsTimer && typedTime === null}
+                className={outlineButtonClass}
               >
                 Reset
               </button>
             </div>
           )}
-          <div className="flex flex-wrap items-center gap-2 text-sm">
-            <label htmlFor="minutes">Or enter minutes</label>
-            <input
-              id="minutes"
-              type="number"
-              min={0}
-              max={24 * 60}
-              value={values.minutes}
-              onChange={update('minutes')}
-              className={`${inputClass} max-w-24`}
-              {...errorProps('minutes', fieldErrors.duration_seconds)}
-            />
-            <span className="text-gray-500 dark:text-gray-400">overrides the timer</span>
-          </div>
-          <FieldError id="minutes" error={fieldErrors.duration_seconds} />
         </div>
 
         <div className="grid gap-6 p-5 sm:grid-cols-2">
