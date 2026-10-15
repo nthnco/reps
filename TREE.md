@@ -142,7 +142,7 @@ Build next, in this order: 8, 9, 7, 10, 11. The rest wait.
     screen. Spec in `docs/design.md`. Leaves in build order; the backend
     leaves come before the screens so components are built against real
     response shapes.
-    - [ ] **Design tokens**: colors, fonts, radii in Tailwind's `@theme`;
+    - [x] **Design tokens**: colors, fonts, radii in Tailwind's `@theme`;
       IBM Plex via fontsource; the app goes dark only.
       Learn: CSS custom properties, Tailwind v4 theme variables, tabular
       numbers.
