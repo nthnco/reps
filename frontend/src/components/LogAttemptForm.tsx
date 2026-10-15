@@ -8,30 +8,58 @@ import { formatDuration } from '../timer/timer'
 import { useTimer } from '../timer/useTimer'
 import {
   cardClass,
-  choiceClass,
   errorProps,
-  Field,
   FieldError,
   ghostButtonClass,
   inputClass,
+  labelClass,
   primaryButtonClass,
   secondaryButtonClass,
   submitClass,
 } from './fields'
+import { SegmentedChoice, type Choice } from './SegmentedChoice'
 
-const EMPTY = {
-  minutes: '',
-  solved: '', // 'yes' | 'no'
-  confidence: '', // '1'..'5'
-  usedHint: false,
-  attemptedOn: '', // blank = today, decided by the server
+type Result = 'solved' | 'not-solved'
+type Confidence = '1' | '2' | '3' | '4' | '5'
+
+type FormValues = {
+  minutes: string
+  solved: Result | null
+  confidence: Confidence | null
+  usedHint: boolean
+  attemptedOn: string // blank = today, decided by the server
 }
-type FormValues = typeof EMPTY
+
+const EMPTY: FormValues = {
+  minutes: '',
+  solved: null,
+  confidence: null,
+  usedHint: false,
+  attemptedOn: '',
+}
 
 const LONG_TIMER_SECONDS = 3 * 60 * 60
 
-const sectionLabelClass =
-  'text-xs font-semibold tracking-wide text-gray-600 uppercase dark:text-gray-400'
+// The icons are hidden from screen readers; the text already says it.
+const RESULT_OPTIONS: Choice<Result>[] = [
+  { value: 'solved', tone: 'solved', label: <><span aria-hidden="true">✓</span> Solved</> },
+  { value: 'not-solved', tone: 'not-solved', label: <><span aria-hidden="true">✕</span> Not solved</> },
+]
+
+const CONFIDENCE_WORDS = { '1': 'Shaky', '2': 'Unsure', '3': 'Okay', '4': 'Solid', '5': 'Cold' }
+
+const CONFIDENCE_OPTIONS = Object.entries(CONFIDENCE_WORDS).map(
+  ([value, word]): Choice<Confidence> => ({
+    value: value as Confidence,
+    // The space keeps the name "4 Solid", not "4Solid"; the column layout hides it.
+    label: (
+      <>
+        <span className="font-mono text-lg">{value}</span>{' '}
+        <span className="font-mono text-xs text-muted">{word}</span>
+      </>
+    ),
+  }),
+)
 
 export function LogAttemptForm({ problem }: { problem: ProblemRead }) {
   const queryClient = useQueryClient()
@@ -48,8 +76,8 @@ export function LogAttemptForm({ problem }: { problem: ProblemRead }) {
   const [logged, setLogged] = useState(false)
   const [submitting, setSubmitting] = useState(false)
 
-  function update(field: Exclude<keyof FormValues, 'usedHint'>) {
-    return (event: ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
+  function update(field: 'minutes' | 'attemptedOn') {
+    return (event: ChangeEvent<HTMLInputElement>) =>
       setValues((current) => ({ ...current, [field]: event.target.value }))
   }
 
@@ -80,7 +108,7 @@ export function LogAttemptForm({ problem }: { problem: ProblemRead }) {
     }
 
     const body: AttemptCreate = {
-      solved: values.solved === 'yes',
+      solved: values.solved === 'solved',
       duration_seconds: durationSeconds,
       confidence: Number(values.confidence),
       used_hint: values.usedHint,
@@ -112,7 +140,7 @@ export function LogAttemptForm({ problem }: { problem: ProblemRead }) {
 
       <div className={`divide-y divide-gray-100 dark:divide-gray-800 ${cardClass}`}>
         <div className="space-y-3 p-5">
-          <p className={sectionLabelClass}>Time</p>
+          <p className={labelClass}>Time</p>
           {otherProblemId !== null ? (
             <p role="status">
               The timer is in use for{' '}
@@ -190,77 +218,59 @@ export function LogAttemptForm({ problem }: { problem: ProblemRead }) {
           <FieldError id="minutes" error={fieldErrors.duration_seconds} />
         </div>
 
-        <div className="grid gap-6 p-5 sm:grid-cols-2">
-          <fieldset className="space-y-2">
-            <legend className={sectionLabelClass}>Result</legend>
-            <div className="grid grid-cols-2 gap-2">
-              {[
-                ['yes', 'Solved'],
-                ['no', 'Not solved'],
-              ].map(([value, label]) => (
-                <label key={value} className={choiceClass}>
-                  <input
-                    type="radio"
-                    name="solved"
-                    value={value}
-                    required
-                    checked={values.solved === value}
-                    onChange={update('solved')}
-                    className="sr-only"
-                  />
-                  {label}
-                </label>
-              ))}
-            </div>
-          </fieldset>
-
-          <fieldset className="space-y-2">
-            <legend className={sectionLabelClass}>Confidence</legend>
-            <div className="grid grid-cols-5 gap-2">
-              {['1', '2', '3', '4', '5'].map((value) => (
-                <label key={value} className={choiceClass}>
-                  <input
-                    type="radio"
-                    name="confidence"
-                    value={value}
-                    required
-                    checked={values.confidence === value}
-                    onChange={update('confidence')}
-                    className="sr-only"
-                  />
-                  {value}
-                </label>
-              ))}
-            </div>
-            <p className="flex justify-between text-xs text-gray-500 dark:text-gray-400">
+        <div className="space-y-5 p-5">
+          <SegmentedChoice
+            name="solved"
+            legend="Result"
+            options={RESULT_OPTIONS}
+            value={values.solved}
+            onChange={(solved) => setValues((v) => ({ ...v, solved }))}
+            required
+          />
+          <div className="space-y-2">
+            <SegmentedChoice
+              name="confidence"
+              legend="Confidence"
+              options={CONFIDENCE_OPTIONS}
+              value={values.confidence}
+              onChange={(confidence) => setValues((v) => ({ ...v, confidence }))}
+              required
+            />
+            <p className="flex justify-between font-mono text-xs text-muted">
               <span>1 = shaky</span>
               <span>5 = could redo it cold</span>
             </p>
-          </fieldset>
+          </div>
         </div>
 
-        <div className="grid items-end gap-4 p-5 sm:grid-cols-2">
-          <Field id="attempted-on" label="Date (leave blank for today)" error={fieldErrors.attempted_on}>
-            <input
-              id="attempted-on"
-              type="date"
-              // en-CA formats as YYYY-MM-DD. Just a hint; the server enforces "not in the future".
-              max={new Date().toLocaleDateString('en-CA')}
-              value={values.attemptedOn}
-              onChange={update('attemptedOn')}
-              className={inputClass}
-              {...errorProps('attempted-on', fieldErrors.attempted_on)}
-            />
-          </Field>
-          <label className="flex items-center gap-2 py-2">
+        <div className="flex flex-wrap items-center justify-between gap-4 p-5">
+          <label className="flex min-h-11 cursor-pointer items-center gap-2">
             <input
               type="checkbox"
               checked={values.usedHint}
               onChange={(event) => setValues((v) => ({ ...v, usedHint: event.target.checked }))}
-              className="size-4 accent-blue-600"
+              className="size-4 accent-accent"
             />
             Used a hint
           </label>
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <label htmlFor="attempted-on" className={labelClass}>
+                Date <span className="normal-case">(blank = today)</span>
+              </label>
+              <input
+                id="attempted-on"
+                type="date"
+                // en-CA formats as YYYY-MM-DD. Just a hint; the server enforces "not in the future".
+                max={new Date().toLocaleDateString('en-CA')}
+                value={values.attemptedOn}
+                onChange={update('attemptedOn')}
+                className={`${inputClass} min-h-11 w-auto font-mono`}
+                {...errorProps('attempted-on', fieldErrors.attempted_on)}
+              />
+            </div>
+            <FieldError id="attempted-on" error={fieldErrors.attempted_on} />
+          </div>
         </div>
 
         <div className="flex flex-wrap items-center gap-3 p-5">

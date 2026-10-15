@@ -50,7 +50,7 @@ beforeEach(() => {
 
 async function fillRequired(user: ReturnType<typeof userEvent.setup>) {
   await user.click(screen.getByRole('radio', { name: 'Solved' }))
-  await user.click(screen.getByRole('radio', { name: '4' }))
+  await user.click(screen.getByRole('radio', { name: '4 Solid' }))
 }
 
 test('typed minutes are sent as seconds, and a blank date is left to the server', async () => {

@@ -12,13 +12,6 @@ export const primaryButtonClass =
 export const secondaryButtonClass =
   'rounded-md border border-gray-300 bg-white px-3 py-1.5 font-medium shadow-sm hover:bg-gray-50 disabled:opacity-50 dark:border-gray-700 dark:bg-gray-900 dark:hover:bg-gray-800'
 
-/**
- * A label that wraps a visually hidden radio and looks like a toggle button.
- * The radio stays real, so keyboard arrows, `required`, and screen readers still work.
- */
-export const choiceClass =
-  'flex cursor-pointer items-center justify-center rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium shadow-sm hover:bg-gray-50 has-checked:border-blue-600 has-checked:bg-blue-600 has-checked:text-white has-focus-visible:ring-2 has-focus-visible:ring-blue-500/40 dark:border-gray-700 dark:bg-gray-900 dark:hover:bg-gray-800 dark:has-checked:border-blue-500 dark:has-checked:bg-blue-500'
-
 export const ghostButtonClass =
   'rounded-md px-3 py-1.5 font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-100'
 
