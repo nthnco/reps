@@ -50,10 +50,10 @@ Main column:
 - **Header**: title, then pattern and difficulty on one line. Difficulty is
   neutral (border and muted text), not green/yellow/red. "Open on LeetCode ↗"
   on the right.
-- **Time**: one field. While the timer runs, it shows the elapsed time.
-  Typing into it stops the timer, and the typed value is what gets saved.
-  "Start problem" (steel blue outline) starts the timer and opens LeetCode,
-  as today. "Reset" clears the timer and the field.
+- **Time**: the timer readout and an "Or enter minutes" box, as today;
+  typed minutes override the timer. (A single field was built and reverted:
+  the user preferred two.) "Start problem" (steel blue outline) starts the
+  timer and opens LeetCode. Pause/Resume and Reset as today.
 - **Result**: two buttons, Solved (check icon) and Not solved (X icon), so
   color is never the only signal. Selected: tinted background and colored
   border in `solved` / `not-solved`.

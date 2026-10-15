@@ -151,9 +151,9 @@ Build next, in this order: 8, 9, 7, 10, 11. The rest wait.
       theirs). Card and Button components dropped as overbuilt; extract
       one if the two screens repeat it. Learn: component props, generic
       components, radio-group accessibility, 44px tap targets.
-    - [ ] **Time field**: one field the timer fills; typing stops the timer
-      and wins. Learn: controlled inputs, syncing an input with a running
-      timer, parsing "14" and "14:30".
+    - ~~**Time field**~~: dropped. Built as one field the timer fills, then
+      reverted by the user's choice: the timer readout plus a separate
+      minutes box stays, restyled in the layout leaf.
     - [ ] **Result and confidence inputs**, plus hint and date, built on
       SegmentedChoice. Learn: radio groups, not relying on color alone.
     - [ ] **Attempt response** (backend): `POST .../attempts` adds
