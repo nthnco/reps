@@ -1,14 +1,42 @@
 @import "tailwindcss";
 
+/* Dark only (docs/design.md). `dark:` styles apply under <html class="dark">,
+   which index.html always sets, instead of following the OS setting. */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* Design tokens. Each is a CSS variable and a Tailwind utility:
+   --color-card -> bg-card, border-card; --radius-button -> rounded-button. */
 @theme {
-  --font-sans: "Inter Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "IBM Plex Sans Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+
+  --color-page: #0c0e12;
+  --color-card: #12151b;
+  --color-line: #232831;
+  --color-ink: #e6e8ec;
+  --color-muted: #8b93a1;
+  --color-accent: #f5a524;
+  --color-on-accent: #1a1204;
+  --color-link: #6ea8fe;
+  --color-solved: #5fd38a;
+  --color-not-solved: #ff8a7a;
+  --color-grid-0: #1b2029;
+  --color-grid-1: #4a3511;
+  --color-grid-2: #80581a;
+  --color-grid-3: #c08420;
+  --color-grid-4: #f5b03a;
+  --color-bar-old: #c9ced8;
+
+  --radius-button: 6px;
+  --radius-card: 8px;
+  --radius-cell: 3px;
 }
 
 body {
-  @apply bg-gray-50 text-gray-900 dark:bg-gray-950 dark:text-gray-100;
+  @apply bg-page text-ink;
 }
 
 :root {
-  /* Native form controls and scrollbars follow the OS light/dark setting. */
-  color-scheme: light dark;
+  /* Native form controls, date pickers and scrollbars draw dark. */
+  color-scheme: dark;
 }

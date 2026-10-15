@@ -138,6 +138,44 @@ Build next, in this order: 8, 9, 7, 10, 11. The rest wait.
       open.
     - **Dimming**: every stage after the first one with nothing covered is
       dimmed, with "Suggested after <that stage>". Cards stay clickable.
+13. **Log screen redesign**: the log-attempt form and a new "Rep logged"
+    screen. Spec in `docs/design.md`. Leaves in build order; the backend
+    leaves come before the screens so components are built against real
+    response shapes.
+    - [x] **Design tokens**: colors, fonts, radii in Tailwind's `@theme`;
+      IBM Plex via fontsource; the app goes dark only.
+      Learn: CSS custom properties, Tailwind v4 theme variables, tabular
+      numbers.
+    - [ ] **Shared components**: Button, SegmentedChoice, Card, Label.
+      Learn: component APIs (props, variants), radio-group accessibility,
+      44px tap targets.
+    - [ ] **Time field**: one field the timer fills; typing stops the timer
+      and wins. Learn: controlled inputs, syncing an input with a running
+      timer, parsing "14" and "14:30".
+    - [ ] **Result and confidence inputs**, plus hint and date, built on
+      SegmentedChoice. Learn: radio groups, not relying on color alone.
+    - [ ] **Attempt response** (backend): `POST .../attempts` adds
+      `next_review_on`, `skill_before`, `skill_after`. Learn: response
+      schemas vs DB models, reading state before and after a write, why the
+      due date is replayed, not stored.
+    - [ ] **Activity endpoint** (backend): `GET /api/activity` (per-day
+      counts for 26 weeks, `run`, `today`); run is a pure function with
+      unit tests. Learn: SQL `GROUP BY` on dates, streak edge cases,
+      timezones.
+    - [ ] **Problem attempts endpoint** (backend):
+      `GET /api/problems/{id}/attempts`, newest first. Learn: REST
+      sub-resources, 404s.
+    - [ ] **Activity grid**: weeks as columns, levels 0-4, month labels,
+      today outlined; 14 or 26 weeks. Learn: date math for calendar grids,
+      CSS grid, accessible labels on a chart.
+    - [ ] **Skill bar**: old level plus gain, and the drop case. Learn:
+      drawing proportions with widths, `role="meter"`.
+    - [ ] **Log screen layout and sidebar**, wired to the endpoints.
+      Learn: responsive two-column layout, TanStack Query for several
+      sources, cache invalidation after a save.
+    - [ ] **Rep logged screen**, from the POST response plus activity.
+      Learn: page state after a mutation, what a refresh loses, focus
+      management when the screen changes.
 
 ## Decided
 
