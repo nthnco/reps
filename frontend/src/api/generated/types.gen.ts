@@ -31,9 +31,9 @@ export type AttemptCreate = {
 };
 
 /**
- * AttemptRead
+ * AttemptCreated
  */
-export type AttemptRead = {
+export type AttemptCreated = {
     /**
      * Id
      */
@@ -62,6 +62,18 @@ export type AttemptRead = {
      * Used Hint
      */
     used_hint: boolean;
+    /**
+     * Next Review On
+     */
+    next_review_on: string;
+    /**
+     * Skill Before
+     */
+    skill_before: number;
+    /**
+     * Skill After
+     */
+    skill_after: number;
 };
 
 /**
@@ -542,7 +554,7 @@ export type CreateAttemptApiProblemsProblemIdAttemptsPostResponses = {
     /**
      * Successful Response
      */
-    201: AttemptRead;
+    201: AttemptCreated;
 };
 
 export type CreateAttemptApiProblemsProblemIdAttemptsPostResponse = CreateAttemptApiProblemsProblemIdAttemptsPostResponses[keyof CreateAttemptApiProblemsProblemIdAttemptsPostResponses];

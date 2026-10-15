@@ -44,6 +44,9 @@ beforeEach(() => {
       duration_seconds: 900,
       confidence: 4,
       used_hint: false,
+      next_review_on: '2026-10-06',
+      skill_before: 0.5,
+      skill_after: 0.6,
     },
   })
 })

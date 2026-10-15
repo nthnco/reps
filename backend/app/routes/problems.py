@@ -1,3 +1,4 @@
+from dataclasses import replace
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -6,8 +7,11 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.db import get_db
-from app.models import Attempt, Problem
-from app.schemas import AttemptCreate, AttemptRead, ProblemCreate, ProblemRead
+from app.mastery import pattern_mastery
+from app.models import Attempt, Pattern, Problem
+from app.schemas import AttemptCreate, AttemptCreated, AttemptRead, ProblemCreate, ProblemRead
+from app.sm2 import schedule
+from app.snapshot import ProblemSnapshot, load_problems
 
 router = APIRouter(prefix="/api/problems", tags=["problems"])
 
@@ -39,18 +43,45 @@ def create_problem(
     return problem
 
 
+def _skill(problems: list[ProblemSnapshot], pattern: Pattern) -> float:
+    rows = pattern_mastery(problems)  # pyright: ignore[reportArgumentType]
+    return next(row.mastery for row in rows if row.pattern == pattern)
+
+
 @router.post(
     "/{problem_id}/attempts",
-    response_model=AttemptRead,
+    response_model=AttemptCreated,
     status_code=status.HTTP_201_CREATED,
 )
 def create_attempt(
     problem_id: int, body: AttemptCreate, db: Annotated[Session, Depends(get_db)]
-) -> Attempt:
-    if db.get(Problem, problem_id) is None:
+) -> AttemptCreated:
+    problem = db.get(Problem, problem_id)
+    if problem is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Problem not found.")
+    before = load_problems(db, pattern=problem.pattern)
+
     attempt = Attempt(problem_id=problem_id, **body.model_dump())
     db.add(attempt)
+    # Flush, not commit, for now: it assigns the id (same-day replay order needs
+    # it) without expiring the loaded attempts, which would reload one by one.
+    db.flush()
+
+    # "After" is built in memory, not re-read, so it can't miss the new attempt
+    # to a stale session cache. Replay (not a stored due date) puts a backdated
+    # attempt in its place in the history.
+    after = [
+        replace(p, attempts=(*p.attempts, attempt)) if p.id == problem_id else p
+        for p in before
+    ]
+    attempts = next(p.attempts for p in after if p.id == problem_id)
+    state = schedule(attempts)  # pyright: ignore[reportArgumentType]
+    assert state is not None  # the problem has at least the attempt just added
+    response = AttemptCreated(
+        **AttemptRead.model_validate(attempt).model_dump(),
+        next_review_on=state.due_on,
+        skill_before=_skill(before, problem.pattern),
+        skill_after=_skill(after, problem.pattern),
+    )
     db.commit()
-    db.refresh(attempt)
-    return attempt
+    return response
