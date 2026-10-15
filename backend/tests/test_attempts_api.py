@@ -1,6 +1,7 @@
 from datetime import timedelta
 
 import pytest
+from sqlalchemy import event
 
 from app.clock import local_today
 
@@ -96,3 +97,26 @@ def test_backdated_attempt_replays_the_due_date_in_date_order(client, problem_id
     # Replayed by date, today's solve is the second clean review (6 days), not the
     # first (1 day): the backdated attempt is slotted in before it.
     assert response.json()["next_review_on"] == (today + timedelta(days=6)).isoformat()
+
+
+def test_attempt_queries_dont_grow_with_history(client, db, problem_id):
+    url = f"/api/problems/{problem_id}/attempts"
+
+    def queries_for_one_post() -> int:
+        selects = []
+
+        def record(_conn, _cursor, sql, *_):
+            # SELECTs only: the test session's SAVEPOINT bookkeeping varies between calls.
+            if sql.startswith("SELECT"):
+                selects.append(sql)
+
+        event.listen(db.get_bind(), "before_cursor_execute", record)
+        client.post(url, json=ATTEMPT)
+        event.remove(db.get_bind(), "before_cursor_execute", record)
+        return len(selects)
+
+    first = queries_for_one_post()
+    for _ in range(4):
+        client.post(url, json=ATTEMPT)
+    # Reloading expired attempts one at a time would add a query per attempt.
+    assert queries_for_one_post() == first

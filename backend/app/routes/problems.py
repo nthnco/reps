@@ -1,3 +1,4 @@
+from dataclasses import replace
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -43,7 +44,7 @@ def create_problem(
 
 
 def _skill(problems: list[ProblemSnapshot], pattern: Pattern) -> float:
-    rows = pattern_mastery(p for p in problems if p.pattern == pattern)  # pyright: ignore[reportArgumentType]
+    rows = pattern_mastery(problems)  # pyright: ignore[reportArgumentType]
     return next(row.mastery for row in rows if row.pattern == pattern)
 
 
@@ -58,22 +59,29 @@ def create_attempt(
     problem = db.get(Problem, problem_id)
     if problem is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Problem not found.")
-    skill_before = _skill(load_problems(db), problem.pattern)
+    before = load_problems(db, pattern=problem.pattern)
 
     attempt = Attempt(problem_id=problem_id, **body.model_dump())
     db.add(attempt)
-    db.commit()
-    db.refresh(attempt)
+    # Flush, not commit, for now: it assigns the id (same-day replay order needs
+    # it) without expiring the loaded attempts, which would reload one by one.
+    db.flush()
 
-    # Replayed, not read back from a stored column: a backdated attempt lands
-    # mid-history and can change everything after it.
-    after = load_problems(db)
-    snapshot = next(p for p in after if p.id == problem_id)
-    state = schedule(snapshot.attempts)  # pyright: ignore[reportArgumentType]
+    # "After" is built in memory, not re-read, so it can't miss the new attempt
+    # to a stale session cache. Replay (not a stored due date) puts a backdated
+    # attempt in its place in the history.
+    after = [
+        replace(p, attempts=(*p.attempts, attempt)) if p.id == problem_id else p
+        for p in before
+    ]
+    attempts = next(p.attempts for p in after if p.id == problem_id)
+    state = schedule(attempts)  # pyright: ignore[reportArgumentType]
     assert state is not None  # the problem has at least the attempt just added
-    return AttemptCreated(
+    response = AttemptCreated(
         **AttemptRead.model_validate(attempt).model_dump(),
         next_review_on=state.due_on,
-        skill_before=skill_before,
+        skill_before=_skill(before, problem.pattern),
         skill_after=_skill(after, problem.pattern),
     )
+    db.commit()
+    return response

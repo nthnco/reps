@@ -27,10 +27,15 @@ class ProblemSnapshot:
     attempts: tuple[Attempt, ...]
 
 
-def load_problems(db: Session, as_of: date | None = None) -> list[ProblemSnapshot]:
-    """Every problem; given `as_of`, only attempts dated before that day."""
+def load_problems(
+    db: Session, as_of: date | None = None, pattern: Pattern | None = None
+) -> list[ProblemSnapshot]:
+    """Every problem (or one pattern's); given `as_of`, only attempts dated before that day."""
+    query = select(Problem)
+    if pattern is not None:
+        query = query.where(Problem.pattern == pattern)
     # selectinload fetches all attempts in one extra query instead of one per problem.
-    problems = db.scalars(select(Problem).options(selectinload(Problem.attempts)))
+    problems = db.scalars(query.options(selectinload(Problem.attempts)))
     return [
         ProblemSnapshot(
             id=p.id,
