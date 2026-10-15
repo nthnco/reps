@@ -188,7 +188,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/AttemptRead"
+                  "$ref": "#/components/schemas/AttemptCreated"
                 }
               }
             }
@@ -360,7 +360,7 @@
         ],
         "title": "AttemptCreate"
       },
-      "AttemptRead": {
+      "AttemptCreated": {
         "properties": {
           "id": {
             "type": "integer",
@@ -390,6 +390,19 @@
           "used_hint": {
             "type": "boolean",
             "title": "Used Hint"
+          },
+          "next_review_on": {
+            "type": "string",
+            "format": "date",
+            "title": "Next Review On"
+          },
+          "skill_before": {
+            "type": "number",
+            "title": "Skill Before"
+          },
+          "skill_after": {
+            "type": "number",
+            "title": "Skill After"
           }
         },
         "type": "object",
@@ -400,9 +413,12 @@
           "solved",
           "duration_seconds",
           "confidence",
-          "used_hint"
+          "used_hint",
+          "next_review_on",
+          "skill_before",
+          "skill_after"
         ],
-        "title": "AttemptRead"
+        "title": "AttemptCreated"
       },
       "Difficulty": {
         "type": "string",

@@ -1,10 +1,10 @@
 import { postJson, readFieldErrors, UNREACHABLE_MESSAGE, type FieldErrorsFor } from './errors'
-import type { AttemptCreate, AttemptRead } from './generated'
+import type { AttemptCreate, AttemptCreated } from './generated'
 
 export type AttemptFieldErrors = FieldErrorsFor<AttemptCreate>
 
 export type CreateAttemptResult =
-  | { ok: true; attempt: AttemptRead }
+  | { ok: true; attempt: AttemptCreated }
   | { ok: false; message: string; fieldErrors: AttemptFieldErrors }
 
 export async function createAttempt(
@@ -17,7 +17,7 @@ export async function createAttempt(
   }
 
   if (response.ok) {
-    return { ok: true, attempt: (await response.json()) as AttemptRead }
+    return { ok: true, attempt: (await response.json()) as AttemptCreated }
   }
 
   if (response.status === 404) {

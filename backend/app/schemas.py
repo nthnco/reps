@@ -95,6 +95,13 @@ class AttemptRead(BaseModel):
     used_hint: bool
 
 
+class AttemptCreated(AttemptRead):
+    next_review_on: date
+    # The pattern's raw mastery (labeled "Skill"), replayed without and with this attempt.
+    skill_before: float
+    skill_after: float
+
+
 class QueueItem(BaseModel):
     problem: ProblemRead
     due_on: date

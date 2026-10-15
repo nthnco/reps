@@ -156,7 +156,7 @@ Build next, in this order: 8, 9, 7, 10, 11. The rest wait.
       minutes box stays, restyled in the layout leaf.
     - [ ] **Result and confidence inputs**, plus hint and date, built on
       SegmentedChoice. Learn: radio groups, not relying on color alone.
-    - [ ] **Attempt response** (backend): `POST .../attempts` adds
+    - [x] **Attempt response** (backend): `POST .../attempts` adds
       `next_review_on`, `skill_before`, `skill_after`. Learn: response
       schemas vs DB models, reading state before and after a write, why the
       due date is replayed, not stored.

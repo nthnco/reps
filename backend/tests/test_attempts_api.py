@@ -71,3 +71,28 @@ def test_invalid_attempt_returns_422(client, problem_id, overrides):
     response = client.post(f"/api/problems/{problem_id}/attempts", json=ATTEMPT | overrides)
 
     assert response.status_code == 422
+
+
+def test_attempt_response_reports_skill_before_and_after(client, problem_id):
+    url = f"/api/problems/{problem_id}/attempts"
+    solve = client.post(url, json=ATTEMPT).json()
+    fail = client.post(url, json=ATTEMPT | {"solved": False}).json()
+
+    assert solve["skill_after"] > solve["skill_before"]
+    # skill_before excludes the new attempt, so each one picks up where the last left off.
+    assert fail["skill_before"] == solve["skill_after"]
+    assert fail["skill_after"] <= fail["skill_before"]
+
+
+def test_backdated_attempt_replays_the_due_date_in_date_order(client, problem_id):
+    url = f"/api/problems/{problem_id}/attempts"
+    today = local_today()
+    client.post(url, json=ATTEMPT)
+
+    response = client.post(
+        url, json=ATTEMPT | {"attempted_on": (today - timedelta(days=3)).isoformat()}
+    )
+
+    # Replayed by date, today's solve is the second clean review (6 days), not the
+    # first (1 day): the backdated attempt is slotted in before it.
+    assert response.json()["next_review_on"] == (today + timedelta(days=6)).isoformat()
