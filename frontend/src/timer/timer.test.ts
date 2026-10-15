@@ -1,14 +1,5 @@
 import { describe, expect, test } from 'vitest'
-import {
-  elapsedMs,
-  formatDuration,
-  IDLE,
-  isTimerState,
-  parseDuration,
-  pause,
-  setElapsed,
-  start,
-} from './timer'
+import { elapsedMs, formatDuration, IDLE, isTimerState, pause, start } from './timer'
 
 describe('timer state', () => {
   test('counts time while running', () => {
@@ -41,12 +32,6 @@ describe('timer state', () => {
     expect(start(paused, 70_000, 7).runningSince).toBe(70_000)
   })
 
-  test('setElapsed replaces the time, paused, for its own problem only', () => {
-    const running = start(IDLE, 0, 7)
-    expect(setElapsed(running, 30_000, 7)).toEqual({ bankedMs: 30_000, runningSince: null, problemId: 7 })
-    expect(setElapsed(running, 30_000, 9)).toBe(running)
-  })
-
   test('a clock moving backwards never produces negative time', () => {
     expect(elapsedMs(start(IDLE, 10_000, 7), 5_000)).toBe(0)
   })
@@ -75,27 +60,5 @@ describe('formatDuration', () => {
     [3_725_000, '1:02:05'],
   ])('%i ms -> %s', (ms, expected) => {
     expect(formatDuration(ms)).toBe(expected)
-  })
-})
-
-describe('parseDuration', () => {
-  test.each([
-    ['14', 840],
-    [' 14 ', 840],
-    ['14:30', 870],
-    ['0:05', 5],
-    ['90:00', 5400], // minutes past 59 are fine on their own
-    ['1:02:05', 3725], // what formatDuration shows past an hour
-    ['', null],
-    ['14.5', null],
-    ['14:', null],
-    ['14:75', null],
-    ['14:5', null], // 14:05 or 14:50? Ambiguous, so rejected
-    ['11:00:0020', null], // typed onto the end of the timer's value
-    ['-3', null],
-    ['1:2:3:4', null],
-    ['abc', null],
-  ])('%j -> %s', (text, expected) => {
-    expect(parseDuration(text)).toBe(expected)
   })
 })

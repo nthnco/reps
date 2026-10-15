@@ -92,7 +92,7 @@ test('logging an attempt marks the problem done in the plan', async () => {
   await user.click(within(plan()).getByRole('link', { name: 'Two Sum' }))
 
   expect(await screen.findByRole('heading', { name: 'Two Sum' })).toBeInTheDocument()
-  await user.type(screen.getByLabelText('Time'), '15')
+  await user.type(screen.getByLabelText(/enter minutes/), '15')
   await user.click(screen.getByRole('radio', { name: 'Solved' }))
   await user.click(screen.getByRole('radio', { name: '4' }))
   await user.click(screen.getByRole('button', { name: 'Log attempt' }))
