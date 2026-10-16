@@ -1,4 +1,4 @@
-import { screen } from '@testing-library/react'
+import { screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, expect, test, vi } from 'vitest'
 import { getActivity } from '../api/activity'
@@ -13,6 +13,7 @@ vi.mock('../api/attempts', () => ({ createAttempt: vi.fn() }))
 vi.mock('../api/problems', () => ({ listProblems: vi.fn() }))
 vi.mock('../api/activity', () => ({ getActivity: vi.fn() }))
 const createAttemptMock = vi.mocked(createAttempt)
+const onLogged = vi.fn()
 
 const TWO_SUM: ProblemRead = {
   id: 7,
@@ -35,6 +36,7 @@ const COIN_CHANGE: ProblemRead = {
 
 beforeEach(() => {
   localStorage.clear()
+  onLogged.mockReset()
   vi.mocked(listProblems).mockReset().mockResolvedValue([TWO_SUM, COIN_CHANGE])
   vi.mocked(getActivity)
     .mockReset()
@@ -63,7 +65,7 @@ async function fillRequired(user: ReturnType<typeof userEvent.setup>) {
 
 test('typed minutes are sent as seconds, and a blank date is left to the server', async () => {
   const user = userEvent.setup()
-  renderWithProviders(<LogAttemptForm problem={TWO_SUM} />)
+  renderWithProviders(<LogAttemptForm problem={TWO_SUM} onLogged={onLogged} />)
 
   await fillRequired(user)
   await user.type(screen.getByLabelText(/enter minutes/), '15')
@@ -75,12 +77,12 @@ test('typed minutes are sent as seconds, and a blank date is left to the server'
     confidence: 4,
     used_hint: false,
   })
-  expect(await screen.findByRole('status')).toHaveTextContent('Logged attempt for Two Sum.')
+  await waitFor(() => expect(onLogged).toHaveBeenCalledWith(expect.objectContaining({ id: 1 })))
 })
 
 test("the date shows the server's today but is sent blank unless changed", async () => {
   const user = userEvent.setup()
-  renderWithProviders(<LogAttemptForm problem={TWO_SUM} />)
+  renderWithProviders(<LogAttemptForm problem={TWO_SUM} onLogged={onLogged} />)
 
   expect(await screen.findByDisplayValue('2026-10-05')).toHaveAttribute('max', '2026-10-05')
   await fillRequired(user)
@@ -92,14 +94,14 @@ test("the date shows the server's today but is sent blank unless changed", async
 
 test('refreshes the plan, activity, and past attempts after logging', async () => {
   const user = userEvent.setup()
-  const { queryClient } = renderWithProviders(<LogAttemptForm problem={TWO_SUM} />)
+  const { queryClient } = renderWithProviders(<LogAttemptForm problem={TWO_SUM} onLogged={onLogged} />)
   const invalidate = vi.spyOn(queryClient, 'invalidateQueries')
 
   await fillRequired(user)
   await user.type(screen.getByLabelText(/enter minutes/), '15')
   await user.click(screen.getByRole('button', { name: 'Log attempt' }))
 
-  await screen.findByRole('status')
+  await waitFor(() => expect(onLogged).toHaveBeenCalled())
   expect(invalidate).toHaveBeenCalledWith({ queryKey: ['plan'] })
   expect(invalidate).toHaveBeenCalledWith({ queryKey: ['activity'] })
   expect(invalidate).toHaveBeenCalledWith({ queryKey: ['problemAttempts', 7] })
@@ -108,20 +110,20 @@ test('refreshes the plan, activity, and past attempts after logging', async () =
 test('uses the timer when minutes are blank, then resets it', async () => {
   localStorage.setItem(STORAGE_KEY, JSON.stringify({ bankedMs: 125_000, runningSince: null, problemId: 7 }))
   const user = userEvent.setup()
-  renderWithProviders(<LogAttemptForm problem={TWO_SUM} />)
+  renderWithProviders(<LogAttemptForm problem={TWO_SUM} onLogged={onLogged} />)
   expect(screen.getByLabelText('Timer')).toHaveTextContent('02:05')
 
   await fillRequired(user)
   await user.click(screen.getByRole('button', { name: 'Log attempt' }))
 
   expect(createAttemptMock).toHaveBeenCalledWith(7, expect.objectContaining({ duration_seconds: 125 }))
-  await screen.findByRole('status')
+  await waitFor(() => expect(onLogged).toHaveBeenCalled())
   expect(screen.getByLabelText('Timer')).toHaveTextContent('00:00')
 })
 
 test('asks for a duration when the timer is at zero and minutes are blank', async () => {
   const user = userEvent.setup()
-  renderWithProviders(<LogAttemptForm problem={TWO_SUM} />)
+  renderWithProviders(<LogAttemptForm problem={TWO_SUM} onLogged={onLogged} />)
 
   await fillRequired(user)
   await user.click(screen.getByRole('button', { name: 'Log attempt' }))
@@ -140,7 +142,7 @@ test.each([
   localStorage.setItem(STORAGE_KEY, JSON.stringify({ bankedMs: elevenHours, runningSince: null, problemId: 7 }))
   const confirm = vi.spyOn(window, 'confirm').mockReturnValue(answer)
   const user = userEvent.setup()
-  renderWithProviders(<LogAttemptForm problem={TWO_SUM} />)
+  renderWithProviders(<LogAttemptForm problem={TWO_SUM} onLogged={onLogged} />)
 
   await fillRequired(user)
   await user.click(screen.getByRole('button', { name: 'Log attempt' }))
@@ -154,7 +156,7 @@ test('typed minutes skip the long-timer question', async () => {
   localStorage.setItem(STORAGE_KEY, JSON.stringify({ bankedMs: 11 * 3_600_000, runningSince: null, problemId: 7 }))
   const confirm = vi.spyOn(window, 'confirm')
   const user = userEvent.setup()
-  renderWithProviders(<LogAttemptForm problem={TWO_SUM} />)
+  renderWithProviders(<LogAttemptForm problem={TWO_SUM} onLogged={onLogged} />)
 
   await fillRequired(user)
   await user.type(screen.getByLabelText(/enter minutes/), '20')
@@ -168,7 +170,7 @@ test('typed minutes skip the long-timer question', async () => {
 test('Start problem starts the timer and opens LeetCode, without submitting', async () => {
   const open = vi.spyOn(window, 'open').mockReturnValue(null)
   const user = userEvent.setup()
-  renderWithProviders(<LogAttemptForm problem={TWO_SUM} />)
+  renderWithProviders(<LogAttemptForm problem={TWO_SUM} onLogged={onLogged} />)
   await fillRequired(user)
 
   await user.click(screen.getByRole('button', { name: 'Start problem' }))
@@ -184,7 +186,7 @@ test('a paused timer resumes without opening LeetCode again', async () => {
   localStorage.setItem(STORAGE_KEY, JSON.stringify({ bankedMs: 60_000, runningSince: null, problemId: 7 }))
   const open = vi.spyOn(window, 'open')
   const user = userEvent.setup()
-  renderWithProviders(<LogAttemptForm problem={TWO_SUM} />)
+  renderWithProviders(<LogAttemptForm problem={TWO_SUM} onLogged={onLogged} />)
 
   await user.click(screen.getByRole('button', { name: 'Resume' }))
 
@@ -197,7 +199,7 @@ test("another problem's timer locks this one out, but typed minutes still work",
   const saved = { bankedMs: 60_000, runningSince: null, problemId: 9 }
   localStorage.setItem(STORAGE_KEY, JSON.stringify(saved))
   const user = userEvent.setup()
-  renderWithProviders(<LogAttemptForm problem={TWO_SUM} />)
+  renderWithProviders(<LogAttemptForm problem={TWO_SUM} onLogged={onLogged} />)
 
   expect(await screen.findByRole('link', { name: 'Coin Change' })).toHaveAttribute(
     'href',
@@ -210,7 +212,7 @@ test("another problem's timer locks this one out, but typed minutes still work",
   await user.click(screen.getByRole('button', { name: 'Log attempt' }))
 
   expect(createAttemptMock).toHaveBeenCalledWith(7, expect.objectContaining({ duration_seconds: 900 }))
-  await screen.findByText('Logged attempt for Two Sum.')
+  await waitFor(() => expect(onLogged).toHaveBeenCalled())
   // Coin Change's time is left alone.
   expect(JSON.parse(localStorage.getItem(STORAGE_KEY)!)).toEqual(saved)
 })
@@ -218,7 +220,7 @@ test("another problem's timer locks this one out, but typed minutes still work",
 test("another problem's timer can be discarded", async () => {
   localStorage.setItem(STORAGE_KEY, JSON.stringify({ bankedMs: 60_000, runningSince: null, problemId: 9 }))
   const user = userEvent.setup()
-  renderWithProviders(<LogAttemptForm problem={TWO_SUM} />)
+  renderWithProviders(<LogAttemptForm problem={TWO_SUM} onLogged={onLogged} />)
 
   await user.click(screen.getByRole('button', { name: 'discard it' }))
 

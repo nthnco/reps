@@ -57,9 +57,24 @@ function fakeBackend({ gated = false } = {}) {
           backlog: [],
           suggestion: null,
         })
+      case 'GET /api/activity':
+        return json({ today: '2026-10-03', start: '2026-04-05', days: [], run: 0 })
+      case 'GET /api/problems/7/attempts':
+        return json([])
       case 'POST /api/problems/7/attempts':
         attempted = true
-        return json({ id: 1, problem_id: 7, ...JSON.parse(init!.body as string) }, 201)
+        return json(
+          {
+            id: 1,
+            problem_id: 7,
+            attempted_on: '2026-10-03',
+            ...JSON.parse(init!.body as string),
+            next_review_on: '2026-10-06',
+            skill_before: 0.6,
+            skill_after: 0.66,
+          },
+          201,
+        )
       default:
         throw new Error(`Unexpected request: ${route}`)
     }
@@ -82,7 +97,7 @@ test('with the gate off, the app shows without a login or logout', async () => {
   expect(screen.queryByRole('button', { name: 'Log out' })).not.toBeInTheDocument()
 })
 
-test('logging an attempt marks the problem done in the plan', async () => {
+test('logging an attempt shows Rep logged, and Next problem falls back to home', async () => {
   const user = userEvent.setup()
   renderWithProviders(<App />)
 
@@ -96,9 +111,15 @@ test('logging an attempt marks the problem done in the plan', async () => {
   await user.click(screen.getByRole('radio', { name: 'Solved' }))
   await user.click(screen.getByRole('radio', { name: '4 Solid' }))
   await user.click(screen.getByRole('button', { name: 'Log attempt' }))
-  await screen.findByRole('status')
 
-  await user.click(screen.getByRole('link', { name: '← All problems' }))
+  // Focus moves to the new screen, since the button that had it is gone.
+  expect(await screen.findByRole('heading', { name: 'Two Sum' })).toHaveFocus()
+  expect(screen.getByText('Rep logged')).toBeInTheDocument()
+  expect(screen.getByText('60% → 66%', { exact: false })).toHaveTextContent('+6')
+  expect(screen.getByText('3 days')).toBeInTheDocument()
+
+  // Two Sum was the plan's only problem, so there's nothing next: home.
+  await user.click(screen.getByRole('button', { name: 'Next problem' }))
   expect(await within(plan()).findByText('✓ Done')).toBeInTheDocument()
 })
 
