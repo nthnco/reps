@@ -2,7 +2,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import { useState, type ChangeEvent, type SubmitEvent } from 'react'
 import { Link } from 'react-router'
 import { createAttempt, type AttemptFieldErrors } from '../api/attempts'
-import type { AttemptCreate, ProblemRead } from '../api/generated'
+import type { AttemptCreate, AttemptCreated, ProblemRead } from '../api/generated'
 import { CONFIDENCE_WORDS, PATTERN_LABELS } from '../api/labels'
 import { queryKeys, useActivity, useProblems } from '../api/queries'
 import { formatDuration } from '../timer/timer'
@@ -59,7 +59,11 @@ const CONFIDENCE_OPTIONS = Object.entries(CONFIDENCE_WORDS).map(
   }),
 )
 
-export function LogAttemptForm({ problem }: { problem: ProblemRead }) {
+export function LogAttemptForm(props: {
+  problem: ProblemRead
+  onLogged: (attempt: AttemptCreated) => void
+}) {
+  const { problem } = props
   const queryClient = useQueryClient()
   const timer = useTimer()
   // Only one problem is timed at a time (even while paused), so this form
@@ -74,7 +78,6 @@ export function LogAttemptForm({ problem }: { problem: ProblemRead }) {
   const [values, setValues] = useState<FormValues>(EMPTY)
   const [fieldErrors, setFieldErrors] = useState<AttemptFieldErrors>({})
   const [message, setMessage] = useState<string | null>(null)
-  const [logged, setLogged] = useState(false)
   const [submitting, setSubmitting] = useState(false)
 
   function update(field: 'minutes' | 'attemptedOn') {
@@ -85,7 +88,6 @@ export function LogAttemptForm({ problem }: { problem: ProblemRead }) {
   async function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault()
     setMessage(null)
-    setLogged(false)
 
     // Typed minutes win; otherwise use the timer.
     const durationSeconds =
@@ -121,9 +123,6 @@ export function LogAttemptForm({ problem }: { problem: ProblemRead }) {
     setSubmitting(false)
 
     if (result.ok) {
-      setLogged(true)
-      setValues(EMPTY)
-      setFieldErrors({})
       if (ownsTimer) timer.reset()
       // The attempt moves this problem's next review date and its pattern's mastery.
       void queryClient.invalidateQueries({ queryKey: queryKeys.patternMastery })
@@ -131,6 +130,9 @@ export function LogAttemptForm({ problem }: { problem: ProblemRead }) {
       void queryClient.invalidateQueries({ queryKey: queryKeys.plan })
       void queryClient.invalidateQueries({ queryKey: queryKeys.activity })
       void queryClient.invalidateQueries({ queryKey: queryKeys.problemAttempts(problem.id) })
+      // The page swaps this form for the Rep logged screen, which unmounts it,
+      // so there are no answers to clear here.
+      props.onLogged(result.attempt)
     } else {
       setMessage(result.message)
       setFieldErrors(result.fieldErrors)
@@ -286,12 +288,6 @@ export function LogAttemptForm({ problem }: { problem: ProblemRead }) {
           {message && (
             <p role="alert" className="text-not-solved">
               {message}
-            </p>
-          )}
-          {/* Replaced by the Rep logged screen in the next leaf. */}
-          {logged && (
-            <p role="status" className="text-solved">
-              Logged attempt for {problem.title}.
             </p>
           )}
         </div>
