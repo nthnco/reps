@@ -3,6 +3,7 @@ import { getMe } from './auth'
 import { getPatternMastery, getProfileSummary } from './mastery'
 import { listProblems } from './problems'
 import { getTodaysPlan } from './plan'
+import { usePace } from '../pace'
 
 // Cache keys in one place, so invalidation can't drift from the queries.
 export const queryKeys = {
@@ -30,6 +31,8 @@ export function useProfileSummary() {
   return useQuery({ queryKey: queryKeys.profileSummary, queryFn: getProfileSummary })
 }
 
+// One cache entry per pace. Invalidating queryKeys.plan matches them all by prefix.
 export function useTodaysPlan() {
-  return useQuery({ queryKey: queryKeys.plan, queryFn: getTodaysPlan })
+  const pace = usePace()
+  return useQuery({ queryKey: [...queryKeys.plan, pace], queryFn: () => getTodaysPlan(pace) })
 }

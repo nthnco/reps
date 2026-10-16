@@ -49,7 +49,8 @@ function fakeBackend({ gated = false } = {}) {
         return json([TWO_SUM])
       case 'GET /api/patterns/mastery':
         return json((Object.keys(PATTERN_LABELS) as Pattern[]).map(untouched))
-      case 'GET /api/plan/today':
+      // No pace stored, so the default.
+      case 'GET /api/plan/today?pace=steady':
         return json({
           today: '2026-10-03',
           budget_seconds: 3600,

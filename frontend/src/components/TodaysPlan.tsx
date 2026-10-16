@@ -1,11 +1,12 @@
 import { Link } from 'react-router'
-import type { PlanItemRead, Reason, SuggestionRead } from '../api/generated'
+import type { Pace, PlanItemRead, Reason, SuggestionRead } from '../api/generated'
 import { PATTERN_LABELS } from '../api/labels'
 import { useTodaysPlan } from '../api/queries'
 import { formatDueDate } from '../dates'
 import { formatMinutes, plural } from '../format'
+import { PACES, setPace, usePace } from '../pace'
 import { DifficultyBadge } from './DifficultyBadge'
-import { cardClass } from './fields'
+import { cardClass, inputClass } from './fields'
 import { PremiumBadge } from './PremiumBadge'
 
 // The backend sends the reason as a kind; pattern labels only live here.
@@ -21,12 +22,31 @@ function totalSeconds(items: PlanItemRead[]): number {
   return items.reduce((sum, item) => sum + item.estimate_seconds, 0)
 }
 
+const PACE_LABELS: Record<Pace, string> = { light: 'Light', steady: 'Steady', intense: 'Intense' }
+
 export function TodaysPlan() {
   const plan = useTodaysPlan()
+  const pace = usePace()
 
   return (
     <section className="space-y-4">
-      <h2 className="text-xl font-semibold">Today's plan</h2>
+      <div className="flex items-center justify-between gap-4">
+        <h2 className="text-xl font-semibold">Today's plan</h2>
+        <label className="flex items-center gap-2 text-sm">
+          Pace
+          <select
+            value={pace}
+            onChange={(event) => setPace(event.target.value as Pace)}
+            className={`${inputClass} w-auto`}
+          >
+            {PACES.map((p) => (
+              <option key={p} value={p}>
+                {PACE_LABELS[p]}
+              </option>
+            ))}
+          </select>
+        </label>
+      </div>
 
       {plan.isPending ? (
         <p>Loading today's plan…</p>
@@ -84,7 +104,7 @@ function PlanList({
   items: PlanItemRead[]
   suggestion: SuggestionRead | null
 }) {
-  // Keeps the API's order: the new problem, then most overdue first.
+  // Keeps the API's order: new problems, then most overdue first.
   return (
     <ul className={`divide-y divide-gray-100 dark:divide-gray-800 ${cardClass}`}>
       {items.map(({ problem, due_on, estimate_seconds, done }) => (
@@ -101,7 +121,9 @@ function PlanList({
               <DifficultyBadge difficulty={problem.difficulty} />
               {problem.is_premium && <PremiumBadge />}
             </p>
-            {due_on === null && suggestion && (
+            {/* Only the suggested problem: a second new one (intense pace) may
+                differ, e.g. a medium after the last easy. */}
+            {suggestion?.problem?.id === problem.id && (
               <p className="text-sm text-gray-600 dark:text-gray-400">
                 {REASONS[suggestion.reason](PATTERN_LABELS[suggestion.pattern])}
               </p>
