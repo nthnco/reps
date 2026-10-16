@@ -1,16 +1,22 @@
+import { useState } from 'react'
 import { Link, useParams } from 'react-router'
+import type { AttemptCreated } from '../api/generated'
 import { DIFFICULTY_LABELS, PATTERN_LABELS } from '../api/labels'
 import { useProblems } from '../api/queries'
 import { outlineButtonClass } from './fields'
 import { PremiumBadge } from './PremiumBadge'
 import { LogAttemptForm } from './LogAttemptForm'
 import { ProblemSidebar } from './ProblemSidebar'
+import { RepLogged } from './RepLogged'
 
 export function ProblemPage() {
   const { id } = useParams()
   // There's no single-problem endpoint; the list is small and usually cached already.
   const problems = useProblems()
   const problem = problems.data?.find((p) => String(p.id) === id)
+  // Page state, not a route: a refresh goes back to the form. Kept with its
+  // problem id, so "Next problem" (same component, new :id) shows the form.
+  const [logged, setLogged] = useState<AttemptCreated | null>(null)
 
   return (
     <div className="space-y-6">
@@ -26,6 +32,8 @@ export function ProblemPage() {
         </p>
       ) : problem === undefined ? (
         <p>That problem doesn't exist.</p>
+      ) : logged?.problem_id === problem.id ? (
+        <RepLogged problem={problem} attempt={logged} onBack={() => setLogged(null)} />
       ) : (
         // One column on narrow screens, so the sidebar falls under the form.
         <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
@@ -51,7 +59,7 @@ export function ProblemPage() {
               </a>
             </div>
             {/* key: a fresh form (no leftover answers) when moving between problems. */}
-            <LogAttemptForm key={problem.id} problem={problem} />
+            <LogAttemptForm key={problem.id} problem={problem} onLogged={setLogged} />
           </div>
           <ProblemSidebar problem={problem} />
         </div>

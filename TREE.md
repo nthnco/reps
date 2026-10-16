@@ -175,7 +175,7 @@ Build next, in this order: 8, 9, 7, 10, 11. The rest wait.
     - [x] **Log screen layout and sidebar**, wired to the endpoints.
       Learn: responsive two-column layout, TanStack Query for several
       sources, cache invalidation after a save.
-    - [ ] **Rep logged screen**, from the POST response plus activity.
+    - [x] **Rep logged screen**, from the POST response plus activity.
       Learn: page state after a mutation, what a refresh loses, focus
       management when the screen changes.
 
