@@ -31,6 +31,11 @@ export const outlineButtonClass = `${tapTarget} border border-line text-ink hove
 /** Steel blue outline: the Start problem button. */
 export const linkButtonClass = `${tapTarget} border border-link text-link hover:bg-link/10`
 
+export const panelClass = 'rounded-card border border-line bg-card'
+
+export const fieldClass =
+  'min-h-11 rounded-button border border-line bg-page px-3 focus:border-link focus:ring-2 focus:ring-link/30 focus:outline-none'
+
 /** Small mono caps for section names and legends. */
 export const labelClass = 'font-mono text-xs font-medium tracking-wide text-muted uppercase'
 

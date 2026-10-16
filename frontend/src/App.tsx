@@ -33,7 +33,7 @@ function HomePage() {
   )
 }
 
-// Every page but home keeps the narrow column; only the pattern cards use the width.
+// Home and the log screen use the full width; the rest keep a narrow column.
 function Narrow({ children }: { children: ReactNode }) {
   return <div className="max-w-3xl space-y-10">{children}</div>
 }
@@ -122,7 +122,8 @@ function App() {
           <Route path="/" element={<HomePage />} />
           <Route path="/patterns" element={<Narrow><MasteryPage /></Narrow>} />
           <Route path="/problems/new" element={<Narrow><AddProblemPage /></Narrow>} />
-          <Route path="/problems/:id" element={<Narrow><ProblemPage /></Narrow>} />
+          {/* Wide: the log screen has a sidebar. */}
+          <Route path="/problems/:id" element={<ProblemPage />} />
         </Routes>
       </main>
     </>

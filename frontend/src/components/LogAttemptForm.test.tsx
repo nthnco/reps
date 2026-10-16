@@ -1,6 +1,7 @@
 import { screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, expect, test, vi } from 'vitest'
+import { getActivity } from '../api/activity'
 import { createAttempt } from '../api/attempts'
 import type { ProblemRead } from '../api/generated'
 import { listProblems } from '../api/problems'
@@ -10,6 +11,7 @@ import { LogAttemptForm } from './LogAttemptForm'
 
 vi.mock('../api/attempts', () => ({ createAttempt: vi.fn() }))
 vi.mock('../api/problems', () => ({ listProblems: vi.fn() }))
+vi.mock('../api/activity', () => ({ getActivity: vi.fn() }))
 const createAttemptMock = vi.mocked(createAttempt)
 
 const TWO_SUM: ProblemRead = {
@@ -34,6 +36,9 @@ const COIN_CHANGE: ProblemRead = {
 beforeEach(() => {
   localStorage.clear()
   vi.mocked(listProblems).mockReset().mockResolvedValue([TWO_SUM, COIN_CHANGE])
+  vi.mocked(getActivity)
+    .mockReset()
+    .mockResolvedValue({ today: '2026-10-05', start: '2026-04-05', days: [], run: 0 })
   createAttemptMock.mockReset().mockResolvedValue({
     ok: true,
     attempt: {
@@ -73,7 +78,19 @@ test('typed minutes are sent as seconds, and a blank date is left to the server'
   expect(await screen.findByRole('status')).toHaveTextContent('Logged attempt for Two Sum.')
 })
 
-test('refreshes the plan after logging an attempt', async () => {
+test("the date shows the server's today but is sent blank unless changed", async () => {
+  const user = userEvent.setup()
+  renderWithProviders(<LogAttemptForm problem={TWO_SUM} />)
+
+  expect(await screen.findByDisplayValue('2026-10-05')).toHaveAttribute('max', '2026-10-05')
+  await fillRequired(user)
+  await user.type(screen.getByLabelText(/enter minutes/), '15')
+  await user.click(screen.getByRole('button', { name: 'Log attempt' }))
+
+  expect(createAttemptMock.mock.calls[0][1]).not.toHaveProperty('attempted_on')
+})
+
+test('refreshes the plan, activity, and past attempts after logging', async () => {
   const user = userEvent.setup()
   const { queryClient } = renderWithProviders(<LogAttemptForm problem={TWO_SUM} />)
   const invalidate = vi.spyOn(queryClient, 'invalidateQueries')
@@ -84,6 +101,8 @@ test('refreshes the plan after logging an attempt', async () => {
 
   await screen.findByRole('status')
   expect(invalidate).toHaveBeenCalledWith({ queryKey: ['plan'] })
+  expect(invalidate).toHaveBeenCalledWith({ queryKey: ['activity'] })
+  expect(invalidate).toHaveBeenCalledWith({ queryKey: ['problemAttempts', 7] })
 })
 
 test('uses the timer when minutes are blank, then resets it', async () => {
