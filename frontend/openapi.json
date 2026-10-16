@@ -155,6 +155,50 @@
       }
     },
     "/api/problems/{problem_id}/attempts": {
+      "get": {
+        "tags": [
+          "problems"
+        ],
+        "summary": "List Attempts",
+        "operationId": "list_attempts_api_problems__problem_id__attempts_get",
+        "parameters": [
+          {
+            "name": "problem_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Problem Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AttemptRead"
+                  },
+                  "title": "Response List Attempts Api Problems  Problem Id  Attempts Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
       "post": {
         "tags": [
           "problems"
@@ -473,6 +517,50 @@
           "skill_after"
         ],
         "title": "AttemptCreated"
+      },
+      "AttemptRead": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "problem_id": {
+            "type": "integer",
+            "title": "Problem Id"
+          },
+          "attempted_on": {
+            "type": "string",
+            "format": "date",
+            "title": "Attempted On"
+          },
+          "solved": {
+            "type": "boolean",
+            "title": "Solved"
+          },
+          "duration_seconds": {
+            "type": "integer",
+            "title": "Duration Seconds"
+          },
+          "confidence": {
+            "type": "integer",
+            "title": "Confidence"
+          },
+          "used_hint": {
+            "type": "boolean",
+            "title": "Used Hint"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "problem_id",
+          "attempted_on",
+          "solved",
+          "duration_seconds",
+          "confidence",
+          "used_hint"
+        ],
+        "title": "AttemptRead"
       },
       "DayCountRead": {
         "properties": {

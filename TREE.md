@@ -164,7 +164,7 @@ Build next, in this order: 8, 9, 7, 10, 11. The rest wait.
       counts for 26 weeks, `run`, `today`); run is a pure function with
       unit tests. Learn: SQL `GROUP BY` on dates, streak edge cases,
       timezones.
-    - [ ] **Problem attempts endpoint** (backend):
+    - [x] **Problem attempts endpoint** (backend):
       `GET /api/problems/{id}/attempts`, newest first. Learn: REST
       sub-resources, 404s.
     - [ ] **Activity grid**: weeks as columns, levels 0-4, month labels,
