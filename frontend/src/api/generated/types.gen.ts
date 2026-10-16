@@ -99,6 +99,40 @@ export type AttemptCreated = {
 };
 
 /**
+ * AttemptRead
+ */
+export type AttemptRead = {
+    /**
+     * Id
+     */
+    id: number;
+    /**
+     * Problem Id
+     */
+    problem_id: number;
+    /**
+     * Attempted On
+     */
+    attempted_on: string;
+    /**
+     * Solved
+     */
+    solved: boolean;
+    /**
+     * Duration Seconds
+     */
+    duration_seconds: number;
+    /**
+     * Confidence
+     */
+    confidence: number;
+    /**
+     * Used Hint
+     */
+    used_hint: boolean;
+};
+
+/**
  * DayCountRead
  */
 export type DayCountRead = {
@@ -564,6 +598,38 @@ export type CreateProblemApiProblemsPostResponses = {
 };
 
 export type CreateProblemApiProblemsPostResponse = CreateProblemApiProblemsPostResponses[keyof CreateProblemApiProblemsPostResponses];
+
+export type ListAttemptsApiProblemsProblemIdAttemptsGetData = {
+    body?: never;
+    path: {
+        /**
+         * Problem Id
+         */
+        problem_id: number;
+    };
+    query?: never;
+    url: '/api/problems/{problem_id}/attempts';
+};
+
+export type ListAttemptsApiProblemsProblemIdAttemptsGetErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type ListAttemptsApiProblemsProblemIdAttemptsGetError = ListAttemptsApiProblemsProblemIdAttemptsGetErrors[keyof ListAttemptsApiProblemsProblemIdAttemptsGetErrors];
+
+export type ListAttemptsApiProblemsProblemIdAttemptsGetResponses = {
+    /**
+     * Response List Attempts Api Problems  Problem Id  Attempts Get
+     *
+     * Successful Response
+     */
+    200: Array<AttemptRead>;
+};
+
+export type ListAttemptsApiProblemsProblemIdAttemptsGetResponse = ListAttemptsApiProblemsProblemIdAttemptsGetResponses[keyof ListAttemptsApiProblemsProblemIdAttemptsGetResponses];
 
 export type CreateAttemptApiProblemsProblemIdAttemptsPostData = {
     body: AttemptCreate;

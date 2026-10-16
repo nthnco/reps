@@ -120,3 +120,26 @@ def test_attempt_queries_dont_grow_with_history(client, db, problem_id):
         client.post(url, json=ATTEMPT)
     # Reloading expired attempts one at a time would add a query per attempt.
     assert queries_for_one_post() == first
+
+
+def test_list_attempts_newest_first_and_only_this_problems(client, problem_id):
+    other = client.post("/api/problems", json=PROBLEM | {
+        "link": "https://leetcode.com/problems/valid-anagram/"}).json()["id"]
+    days_ago = lambda n: (local_today() - timedelta(days=n)).isoformat()
+    post = lambda pid, **extra: client.post(
+        f"/api/problems/{pid}/attempts", json=ATTEMPT | extra).json()["id"]
+    today_first = post(problem_id, attempted_on=days_ago(0))
+    backdated = post(problem_id, attempted_on=days_ago(3))  # logged later, but older
+    today_second = post(problem_id, attempted_on=days_ago(0))
+    post(other)
+
+    response = client.get(f"/api/problems/{problem_id}/attempts")
+
+    assert response.status_code == 200
+    assert [a["id"] for a in response.json()] == [today_second, today_first, backdated]
+
+
+def test_list_attempts_for_missing_problem_returns_404(client):
+    response = client.get("/api/problems/999999/attempts")
+
+    assert response.status_code == 404

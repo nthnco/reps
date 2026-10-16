@@ -43,6 +43,20 @@ def create_problem(
     return problem
 
 
+@router.get("/{problem_id}/attempts", response_model=list[AttemptRead])
+def list_attempts(problem_id: int, db: Annotated[Session, Depends(get_db)]) -> list[Attempt]:
+    # Without this check a missing problem would look like one with no attempts.
+    if db.get(Problem, problem_id) is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Problem not found.")
+    return list(
+        db.scalars(
+            select(Attempt)
+            .where(Attempt.problem_id == problem_id)
+            .order_by(Attempt.attempted_on.desc(), Attempt.id.desc())  # same day: last logged first
+        )
+    )
+
+
 def _skill(problems: list[ProblemSnapshot], pattern: Pattern) -> float:
     rows = pattern_mastery(problems)  # pyright: ignore[reportArgumentType]
     return next(row.mastery for row in rows if row.pattern == pattern)
