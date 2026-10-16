@@ -100,7 +100,7 @@ Build next, in this order: 8, 9, 7, 10, 11. The rest wait.
       one. An otherwise empty plan takes one review over budget.
     - Backdating an attempt to before today changes the plan the same day.
       Accepted: preventing it would need a `created_at` column.
-11. **Pace**: a dropdown, sent as `GET /api/plan/today?pace=` with an enum
+11. [x] **Pace**: a dropdown, sent as `GET /api/plan/today?pace=` with an enum
     (anything else is a 422; missing is steady). Stored in localStorage,
     falling back to steady if invalid; server-side once accounts exist.
     The numbers live in one config file:

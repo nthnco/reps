@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event'
 import { beforeEach, expect, test, vi } from 'vitest'
 import type { PlanItemRead, PlanRead, ProblemRead } from '../api/generated'
 import { getTodaysPlan } from '../api/plan'
+import { PACE_STORAGE_KEY } from '../pace'
 import { renderWithProviders } from '../test/render'
 import { TodaysPlan } from './TodaysPlan'
 
@@ -37,6 +38,7 @@ function plan(overrides: Partial<PlanRead> = {}): PlanRead {
 }
 
 beforeEach(() => {
+  localStorage.clear()
   getTodaysPlanMock.mockReset()
 })
 
@@ -93,4 +95,43 @@ test('says when every item is done', async () => {
   renderWithProviders(<TodaysPlan />)
 
   expect(await screen.findByText(/All done for today\./)).toBeInTheDocument()
+})
+
+test('choosing a pace saves it and replans with it', async () => {
+  const user = userEvent.setup()
+  getTodaysPlanMock.mockResolvedValue(plan())
+  renderWithProviders(<TodaysPlan />)
+  await screen.findByText('Nothing due and nothing new today.')
+  expect(getTodaysPlanMock).toHaveBeenLastCalledWith('steady')
+
+  await user.selectOptions(screen.getByLabelText('Pace'), 'Intense')
+
+  expect(getTodaysPlanMock).toHaveBeenLastCalledWith('intense')
+  expect(localStorage.getItem(PACE_STORAGE_KEY)).toBe('intense')
+})
+
+test('a stored pace the app no longer knows falls back to steady', async () => {
+  localStorage.setItem(PACE_STORAGE_KEY, 'turbo')
+  getTodaysPlanMock.mockResolvedValue(plan())
+  renderWithProviders(<TodaysPlan />)
+
+  expect(await screen.findByLabelText('Pace')).toHaveValue('steady')
+  expect(getTodaysPlanMock).toHaveBeenLastCalledWith('steady')
+})
+
+test('with two new problems, only the suggested one carries the reason', async () => {
+  const easy = item(1, 'Meeting Rooms', { due_on: null })
+  const medium = item(2, 'Merge Intervals', { due_on: null })
+  getTodaysPlanMock.mockResolvedValue(
+    plan({
+      items: [easy, medium],
+      suggestion: { pattern: 'intervals', problem: easy.problem, reason: 'start_easy' },
+    }),
+  )
+  renderWithProviders(<TodaysPlan />)
+
+  const [first, second] = await screen.findAllByRole('listitem')
+  expect(first).toHaveTextContent('Start with an easy.')
+  expect(second).not.toHaveTextContent('Start with an easy.')
+  expect(second).toHaveTextContent('New')
 })
