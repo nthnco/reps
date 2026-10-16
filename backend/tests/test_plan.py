@@ -62,7 +62,7 @@ def test_new_problem_goes_in_even_when_reviews_would_fill_the_day():
     new = timed(25)
     first, second = timed(30), timed(30)
 
-    plan = fit(due(first, second), new, budget_seconds=60 * MIN)
+    plan = fit(due(first, second), [new], budget_seconds=60 * MIN)
 
     assert [e.problem for e in plan.items] == [new, first]
     assert plan.items[0].due_on is None
@@ -72,13 +72,13 @@ def test_new_problem_goes_in_even_when_reviews_would_fill_the_day():
 def test_a_short_review_never_jumps_a_more_overdue_long_one():
     long, short = timed(50), timed(5)
 
-    plan = fit(due(timed(20), long, short), None, budget_seconds=60 * MIN)
+    plan = fit(due(timed(20), long, short), [], budget_seconds=60 * MIN)
 
     assert [e.problem for e in plan.backlog] == [long, short]
 
 
 def test_filling_the_budget_exactly_fits():
-    plan = fit(due(timed(30), timed(30)), None, budget_seconds=60 * MIN)
+    plan = fit(due(timed(30), timed(30)), [], budget_seconds=60 * MIN)
 
     assert len(plan.items) == 2 and plan.backlog == []
 
@@ -86,7 +86,7 @@ def test_filling_the_budget_exactly_fits():
 def test_an_empty_plan_takes_one_review_over_budget():
     huge = timed(90)
 
-    plan = fit(due(huge, timed(10)), None, budget_seconds=60 * MIN)
+    plan = fit(due(huge, timed(10)), [], budget_seconds=60 * MIN)
 
     assert [e.problem for e in plan.items] == [huge]
     assert len(plan.backlog) == 1

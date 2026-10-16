@@ -3,7 +3,7 @@ from datetime import date, timedelta
 from itertools import count
 
 from app.models import Difficulty, Pattern
-from app.suggest import Reason, covered_patterns, is_covered, suggest, tier_counts
+from app.suggest import Reason, covered_patterns, is_covered, suggest, suggest_many, tier_counts
 
 E, M, H = Difficulty.EASY, Difficulty.MEDIUM, Difficulty.HARD
 FIRST, SECOND = Pattern.ARRAYS_HASHING, Pattern.TWO_POINTERS
@@ -227,3 +227,29 @@ def test_all_covered_hards_wait_until_no_medium_is_left_anywhere():
 
 def test_all_covered_with_nothing_new_suggests_nothing():
     assert suggest([*covered(FIRST), *every_other_pattern_covered()], {}) is None
+
+
+# --- suggest_many ---
+
+
+def test_many_takes_the_next_problem_each_time():
+    first, second, third = FakeProblem(E), FakeProblem(E), FakeProblem(E)
+    picks = suggest_many([third, second, first], {}, 2)
+    assert [s.problem for s in picks] == [first, second]
+
+
+def test_many_moves_up_to_mediums_after_the_last_easy():
+    easy, medium = FakeProblem(E), FakeProblem(M)
+    picks = suggest_many([medium, easy], {}, 2)
+    assert [s.problem for s in picks] == [easy, medium]
+
+
+def test_many_stops_at_keep_reviewing():
+    # One new medium and an uncovered pattern: after it, nothing new in the
+    # pattern, so keep reviewing ends the list rather than jumping ahead.
+    medium, later = FakeProblem(M), FakeProblem(E, SECOND)
+    picks = suggest_many([solved(M), medium, later], {}, 2)
+    assert [(s.problem, s.reason) for s in picks] == [
+        (medium, Reason.NEXT_MEDIUM),
+        (None, Reason.KEEP_REVIEWING),
+    ]

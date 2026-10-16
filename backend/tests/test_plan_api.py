@@ -63,3 +63,23 @@ def test_reviews_that_dont_fit_go_to_the_backlog(client):
     assert [i["problem"]["id"] for i in p["items"]] == [new, slow[0]]
     assert [i["estimate_seconds"] for i in p["items"]] == [15 * 60, 45 * 60]
     assert rows(p["backlog"]) == [(slow[1], False)]
+
+
+def test_intense_pace_plans_two_new_problems_in_a_longer_budget(client):
+    first = add_problem(client, "two-sum", "easy")
+    second = add_problem(client, "valid-anagram", "easy")
+
+    steady = plan(client)
+    response = client.get("/api/plan/today", params={"pace": "intense"})
+
+    assert response.status_code == 200
+    intense = response.json()
+    assert (steady["budget_seconds"], rows(steady["items"])) == (60 * 60, [(first, False)])
+    assert (intense["budget_seconds"], rows(intense["items"])) == (
+        90 * 60,
+        [(first, False), (second, False)],
+    )
+
+
+def test_an_unknown_pace_is_a_422(client):
+    assert client.get("/api/plan/today", params={"pace": "fast"}).status_code == 422

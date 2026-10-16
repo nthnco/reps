@@ -334,6 +334,17 @@
         ],
         "summary": "Todays Plan",
         "operationId": "todays_plan_api_plan_today_get",
+        "parameters": [
+          {
+            "name": "pace",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/Pace",
+              "default": "steady"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -341,6 +352,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/PlanRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
                 }
               }
             }
@@ -669,6 +690,15 @@
           "demo"
         ],
         "title": "Me"
+      },
+      "Pace": {
+        "type": "string",
+        "enum": [
+          "light",
+          "steady",
+          "intense"
+        ],
+        "title": "Pace"
       },
       "Pattern": {
         "type": "string",

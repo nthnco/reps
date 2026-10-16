@@ -1,6 +1,6 @@
-"""Today's plan: a time-boxed list of reviews plus the new problem, as pure functions.
+"""Today's plan: a time-boxed list of reviews plus the new problems, as pure functions.
 
-The new problem always gets its slot first; reviews fill what's left, most
+New problems always get their slots first; reviews fill what's left, most
 overdue first. The first review that doesn't fit ends the plan, so the order
 stays honest: a short review never jumps a more overdue long one. Everything
 after it is backlog.
@@ -32,7 +32,7 @@ class ProblemLike(Protocol):
 @dataclass(frozen=True)
 class Entry[P]:
     problem: P
-    due_on: date | None  # None: the new problem
+    due_on: date | None  # None: a new problem
     estimate_seconds: int
 
 
@@ -53,12 +53,10 @@ def estimate_seconds(problem: ProblemLike) -> int:
 
 
 def fit[P: ProblemLike](
-    reviews: Sequence[tuple[P, date]], new: P | None, budget_seconds: int
+    reviews: Sequence[tuple[P, date]], new: Sequence[P], budget_seconds: int
 ) -> Plan[P]:
     """`reviews` most overdue first. The plan is never empty while there's anything to do."""
-    items: list[Entry[P]] = []
-    if new is not None:
-        items.append(Entry(new, None, estimate_seconds(new)))
+    items = [Entry(p, None, estimate_seconds(p)) for p in new]
     used = sum(e.estimate_seconds for e in items)
 
     entries = [Entry(p, due_on, estimate_seconds(p)) for p, due_on in reviews]

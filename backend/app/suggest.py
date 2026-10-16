@@ -166,3 +166,23 @@ def suggest[P: ProblemLike](
             if fresh:
                 return Suggestion(pattern, min(fresh, key=lambda p: p.id), Reason.DEEPEN)
     return None
+
+
+def suggest_many[P: ProblemLike](
+    problems: Iterable[P], raw_mastery: Mapping[Pattern, float], n: int
+) -> list[Suggestion[P]]:
+    """Up to `n` new problems: each is `suggest` with the earlier picks taken out.
+
+    Stops early at KEEP_REVIEWING (included, so the plan can say why) or when
+    nothing new is left. A pick is never-attempted, so taking it out leaves
+    coverage alone; if it was the pattern's last easy, the next pick moves up
+    to mediums, as `_tier` already does when a pattern has no easies.
+    """
+    pool = list(problems)
+    picks: list[Suggestion[P]] = []
+    while len(picks) < n and (s := suggest(pool, raw_mastery)) is not None:
+        picks.append(s)
+        if s.problem is None:
+            break
+        pool = [p for p in pool if p is not s.problem]
+    return picks
