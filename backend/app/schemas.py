@@ -155,6 +155,18 @@ class PlanRead(BaseModel):
     suggestion: SuggestionRead | None  # why the new item was picked, or keep_reviewing
 
 
+class DayCountRead(BaseModel):
+    day: date
+    count: int
+
+
+class ActivityRead(BaseModel):
+    today: date
+    start: date  # Sunday of the grid's first week
+    days: list[DayCountRead]  # oldest first; days with no attempts are left out
+    run: int
+
+
 class RatingPartRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 

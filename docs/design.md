@@ -121,7 +121,7 @@ What exists today, and the smallest change for each gap:
 | Next review date after a save  | `sm2.schedule()` computes it, but `POST /api/problems/{id}/attempts` returns only the attempt | Add `next_review_on` to the response |
 | Pattern skill before / after   | Per-pattern raw `mastery` exists (`/api/patterns/mastery`); nothing compares before and after | Add `skill_before` / `skill_after` (the pattern's raw `mastery`) to the same response |
 | Per-problem mastery            | Doesn't exist; mastery is only per pattern    | None: the Skill card shows only the pattern (see Decided) |
-| Attempts per day, run length   | No endpoint                                   | `GET /api/activity`: last 26 weeks of `{date, count}` (days with attempts only), `run`, and `today` |
+| Attempts per day, run length   | No endpoint                                   | `GET /api/activity`: `{day, count}` for days with attempts from `start` (the Sunday 25 weeks before this week's) on, plus `run` and `today` |
 | "Last time" on the log screen  | No endpoint lists a problem's attempts        | `GET /api/problems/{id}/attempts`, newest first |
 
 All new routes take their session from `get_db`, so demo mode keeps
