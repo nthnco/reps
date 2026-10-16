@@ -210,6 +210,11 @@ export type Me = {
 };
 
 /**
+ * Pace
+ */
+export type Pace = 'light' | 'steady' | 'intense';
+
+/**
  * Pattern
  */
 export type Pattern = 'arrays_hashing' | 'two_pointers' | 'sliding_window' | 'stack' | 'binary_search' | 'linked_list' | 'trees' | 'tries' | 'heap' | 'greedy' | 'intervals' | 'backtracking' | 'graphs' | 'advanced_graphs' | 'dp_1d' | 'dp_2d' | 'math_geometry' | 'bit_manipulation';
@@ -716,9 +721,20 @@ export type GetProfileSummaryApiProfileSummaryGetResponse = GetProfileSummaryApi
 export type TodaysPlanApiPlanTodayGetData = {
     body?: never;
     path?: never;
-    query?: never;
+    query?: {
+        pace?: Pace;
+    };
     url: '/api/plan/today';
 };
+
+export type TodaysPlanApiPlanTodayGetErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type TodaysPlanApiPlanTodayGetError = TodaysPlanApiPlanTodayGetErrors[keyof TodaysPlanApiPlanTodayGetErrors];
 
 export type TodaysPlanApiPlanTodayGetResponses = {
     /**

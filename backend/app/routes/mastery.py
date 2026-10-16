@@ -35,7 +35,7 @@ from app.schemas import (
 )
 from app.sm2 import ReviewState, retention, schedule
 from app.snapshot import ProblemSnapshot, load_problems
-from app.suggest import covered_patterns, suggest, tier_counts
+from app.suggest import covered_patterns, suggest_many, tier_counts
 
 router = APIRouter(prefix="/api", tags=["mastery"])
 
@@ -113,18 +113,23 @@ def get_suggestion(db: Annotated[Session, Depends(get_db)]) -> SuggestionRead | 
 
 def build_suggestion(db: Session, as_of: date | None = None) -> SuggestionRead | None:
     """The suggestion as it stood at the start of `as_of` (default: live, as of now)."""
+    suggestions = build_suggestions(db, as_of, 1)
+    return suggestions[0] if suggestions else None
+
+
+def build_suggestions(db: Session, as_of: date | None, n: int) -> list[SuggestionRead]:
+    """Up to `n` suggestions, as `build_suggestion` but for a pace with more new a day."""
     problems = load_problems(db, as_of)
     rows = pattern_mastery(problems)  # pyright: ignore[reportArgumentType]
     raw_mastery = {row.pattern: row.mastery for row in rows}
-    suggestion = suggest(problems, raw_mastery)  # pyright: ignore[reportArgumentType]
-    if suggestion is None:
-        return None
-    problem = suggestion.problem
-    return SuggestionRead(
-        pattern=suggestion.pattern,
-        problem=ProblemRead.model_validate(problem) if problem else None,
-        reason=suggestion.reason,
-    )
+    return [
+        SuggestionRead(
+            pattern=s.pattern,
+            problem=ProblemRead.model_validate(s.problem) if s.problem else None,
+            reason=s.reason,
+        )
+        for s in suggest_many(problems, raw_mastery, n)  # pyright: ignore[reportArgumentType]
+    ]
 
 
 @router.get("/profile/summary", response_model=ProfileSummaryRead)
