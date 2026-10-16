@@ -172,7 +172,7 @@ Build next, in this order: 8, 9, 7, 10, 11. The rest wait.
       CSS grid, accessible labels on a chart.
     - [x] **Skill bar**: old level plus gain, and the drop case. Learn:
       drawing proportions with widths, `role="meter"`.
-    - [ ] **Log screen layout and sidebar**, wired to the endpoints.
+    - [x] **Log screen layout and sidebar**, wired to the endpoints.
       Learn: responsive two-column layout, TanStack Query for several
       sources, cache invalidation after a save.
     - [ ] **Rep logged screen**, from the POST response plus activity.

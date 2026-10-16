@@ -23,6 +23,15 @@ export const PATTERN_LABELS: Record<Pattern, string> = {
   bit_manipulation: 'Bit Manipulation',
 }
 
+// Keyed by the confidence value as a string ('1'..'5'), as radio values are.
+export const CONFIDENCE_WORDS: Record<string, string> = {
+  '1': 'Shaky',
+  '2': 'Unsure',
+  '3': 'Okay',
+  '4': 'Solid',
+  '5': 'Cold',
+}
+
 // Roadmap stages for the All problems page. Each is a contiguous slice of the
 // roadmap order (the Pattern enum), so branch 7's next pattern is always in
 // the first stage that isn't fully covered.

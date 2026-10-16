@@ -3,19 +3,19 @@ import { useState, type ChangeEvent, type SubmitEvent } from 'react'
 import { Link } from 'react-router'
 import { createAttempt, type AttemptFieldErrors } from '../api/attempts'
 import type { AttemptCreate, ProblemRead } from '../api/generated'
-import { queryKeys, useProblems } from '../api/queries'
+import { CONFIDENCE_WORDS, PATTERN_LABELS } from '../api/labels'
+import { queryKeys, useActivity, useProblems } from '../api/queries'
 import { formatDuration } from '../timer/timer'
 import { useTimer } from '../timer/useTimer'
 import {
-  cardClass,
+  accentButtonClass,
   errorProps,
+  fieldClass,
   FieldError,
-  ghostButtonClass,
-  inputClass,
   labelClass,
-  primaryButtonClass,
-  secondaryButtonClass,
-  submitClass,
+  linkButtonClass,
+  outlineButtonClass,
+  panelClass,
 } from './fields'
 import { SegmentedChoice, type Choice } from './SegmentedChoice'
 
@@ -27,7 +27,7 @@ type FormValues = {
   solved: Result | null
   confidence: Confidence | null
   usedHint: boolean
-  attemptedOn: string // blank = today, decided by the server
+  attemptedOn: string // blank = the server's today (the input shows it)
 }
 
 const EMPTY: FormValues = {
@@ -45,8 +45,6 @@ const RESULT_OPTIONS: Choice<Result>[] = [
   { value: 'solved', tone: 'solved', label: <><span aria-hidden="true">✓</span> Solved</> },
   { value: 'not-solved', tone: 'not-solved', label: <><span aria-hidden="true">✕</span> Not solved</> },
 ]
-
-const CONFIDENCE_WORDS = { '1': 'Shaky', '2': 'Unsure', '3': 'Okay', '4': 'Solid', '5': 'Cold' }
 
 const CONFIDENCE_OPTIONS = Object.entries(CONFIDENCE_WORDS).map(
   ([value, word]): Choice<Confidence> => ({
@@ -70,6 +68,9 @@ export function LogAttemptForm({ problem }: { problem: ProblemRead }) {
   const elapsedMs = ownsTimer ? timer.elapsedMs : 0
   const otherProblemId = timer.problemId !== null && !ownsTimer ? timer.problemId : null
   const otherProblem = useProblems().data?.find((p) => p.id === otherProblemId)
+  // The server's today, not the browser's: near midnight they can differ, and a
+  // browser "tomorrow" would be rejected as a future date.
+  const today = useActivity().data?.today
   const [values, setValues] = useState<FormValues>(EMPTY)
   const [fieldErrors, setFieldErrors] = useState<AttemptFieldErrors>({})
   const [message, setMessage] = useState<string | null>(null)
@@ -128,6 +129,8 @@ export function LogAttemptForm({ problem }: { problem: ProblemRead }) {
       void queryClient.invalidateQueries({ queryKey: queryKeys.patternMastery })
       void queryClient.invalidateQueries({ queryKey: queryKeys.profileSummary })
       void queryClient.invalidateQueries({ queryKey: queryKeys.plan })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.activity })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.problemAttempts(problem.id) })
     } else {
       setMessage(result.message)
       setFieldErrors(result.fieldErrors)
@@ -135,10 +138,8 @@ export function LogAttemptForm({ problem }: { problem: ProblemRead }) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-3">
-      <h3 className="text-lg font-semibold">Log an attempt</h3>
-
-      <div className={`divide-y divide-gray-100 dark:divide-gray-800 ${cardClass}`}>
+    <form onSubmit={handleSubmit}>
+      <div className={`divide-y divide-line ${panelClass}`}>
         <div className="space-y-3 p-5">
           <p className={labelClass}>Time</p>
           {otherProblemId !== null ? (
@@ -146,7 +147,7 @@ export function LogAttemptForm({ problem }: { problem: ProblemRead }) {
               The timer is in use for{' '}
               <Link
                 to={`/problems/${otherProblemId}`}
-                className="text-blue-700 hover:underline dark:text-blue-400"
+                className="text-link hover:underline"
               >
                 {otherProblem?.title ?? 'another problem'}
               </Link>
@@ -160,21 +161,21 @@ export function LogAttemptForm({ problem }: { problem: ProblemRead }) {
           ) : (
             <div className="flex flex-wrap items-center gap-3">
               <span
-                className={`min-w-32 font-mono text-4xl tabular-nums ${timer.running && ownsTimer ? '' : 'text-gray-400 dark:text-gray-500'}`}
+                className={`min-w-32 text-4xl tabular-nums ${timer.running && ownsTimer ? '' : 'text-muted'}`}
                 aria-label="Timer"
               >
                 {formatDuration(elapsedMs)}
               </span>
               {/* type="button": a plain <button> inside a form would submit it. */}
               {timer.running ? (
-                <button type="button" onClick={timer.pause} className={secondaryButtonClass}>
+                <button type="button" onClick={timer.pause} className={outlineButtonClass}>
                   Pause
                 </button>
               ) : ownsTimer ? (
                 <button
                   type="button"
                   onClick={() => timer.start(problem.id)}
-                  className={primaryButtonClass}
+                  className={outlineButtonClass}
                 >
                   Resume
                 </button>
@@ -186,7 +187,7 @@ export function LogAttemptForm({ problem }: { problem: ProblemRead }) {
                     // Called straight from the click, so popup blockers allow it.
                     window.open(problem.link, '_blank', 'noopener,noreferrer')
                   }}
-                  className={primaryButtonClass}
+                  className={linkButtonClass}
                 >
                   Start problem <span aria-hidden="true">↗</span>
                 </button>
@@ -195,7 +196,7 @@ export function LogAttemptForm({ problem }: { problem: ProblemRead }) {
                 type="button"
                 onClick={timer.reset}
                 disabled={!ownsTimer}
-                className={ghostButtonClass}
+                className={outlineButtonClass}
               >
                 Reset
               </button>
@@ -210,10 +211,10 @@ export function LogAttemptForm({ problem }: { problem: ProblemRead }) {
               max={24 * 60}
               value={values.minutes}
               onChange={update('minutes')}
-              className={`${inputClass} max-w-24`}
+              className={`${fieldClass} w-24`}
               {...errorProps('minutes', fieldErrors.duration_seconds)}
             />
-            <span className="text-gray-500 dark:text-gray-400">overrides the timer</span>
+            <span className="text-muted">overrides the timer</span>
           </div>
           <FieldError id="minutes" error={fieldErrors.duration_seconds} />
         </div>
@@ -256,16 +257,18 @@ export function LogAttemptForm({ problem }: { problem: ProblemRead }) {
           <div className="space-y-1">
             <div className="flex items-center gap-2">
               <label htmlFor="attempted-on" className={labelClass}>
-                Date <span className="normal-case">(blank = today)</span>
+                Date
               </label>
               <input
                 id="attempted-on"
                 type="date"
-                // en-CA formats as YYYY-MM-DD. Just a hint; the server enforces "not in the future".
-                max={new Date().toLocaleDateString('en-CA')}
-                value={values.attemptedOn}
+                // Just a hint; the server enforces "not in the future".
+                max={today}
+                // Shows today while left blank, so an untouched date is still sent
+                // as blank and stays "today" even if the page is open past midnight.
+                value={values.attemptedOn || (today ?? '')}
                 onChange={update('attemptedOn')}
-                className={`${inputClass} min-h-11 w-auto font-mono`}
+                className={`${fieldClass} font-mono`}
                 {...errorProps('attempted-on', fieldErrors.attempted_on)}
               />
             </div>
@@ -273,17 +276,21 @@ export function LogAttemptForm({ problem }: { problem: ProblemRead }) {
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-3 p-5">
-          <button type="submit" disabled={submitting} className={submitClass}>
+        <div className="space-y-2 p-5">
+          <button type="submit" disabled={submitting} className={`w-full ${accentButtonClass}`}>
             {submitting ? 'Saving…' : 'Log attempt'}
           </button>
+          <p className="text-center text-sm text-muted">
+            Updates {PATTERN_LABELS[problem.pattern]} skill and sets the next review
+          </p>
           {message && (
-            <p role="alert" className="text-red-600 dark:text-red-400">
+            <p role="alert" className="text-not-solved">
               {message}
             </p>
           )}
+          {/* Replaced by the Rep logged screen in the next leaf. */}
           {logged && (
-            <p role="status" className="text-green-700 dark:text-green-400">
+            <p role="status" className="text-solved">
               Logged attempt for {problem.title}.
             </p>
           )}
