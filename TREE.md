@@ -167,10 +167,10 @@ Build next, in this order: 8, 9, 7, 10, 11. The rest wait.
     - [x] **Problem attempts endpoint** (backend):
       `GET /api/problems/{id}/attempts`, newest first. Learn: REST
       sub-resources, 404s.
-    - [ ] **Activity grid**: weeks as columns, levels 0-4, month labels,
+    - [x] **Activity grid**: weeks as columns, levels 0-4, month labels,
       today outlined; 14 or 26 weeks. Learn: date math for calendar grids,
       CSS grid, accessible labels on a chart.
-    - [ ] **Skill bar**: old level plus gain, and the drop case. Learn:
+    - [x] **Skill bar**: old level plus gain, and the drop case. Learn:
       drawing proportions with widths, `role="meter"`.
     - [ ] **Log screen layout and sidebar**, wired to the endpoints.
       Learn: responsive two-column layout, TanStack Query for several
