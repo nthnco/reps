@@ -5,6 +5,28 @@ export type ClientOptions = {
 };
 
 /**
+ * ActivityRead
+ */
+export type ActivityRead = {
+    /**
+     * Today
+     */
+    today: string;
+    /**
+     * Start
+     */
+    start: string;
+    /**
+     * Days
+     */
+    days: Array<DayCountRead>;
+    /**
+     * Run
+     */
+    run: number;
+};
+
+/**
  * AttemptCreate
  */
 export type AttemptCreate = {
@@ -74,6 +96,20 @@ export type AttemptCreated = {
      * Skill After
      */
     skill_after: number;
+};
+
+/**
+ * DayCountRead
+ */
+export type DayCountRead = {
+    /**
+     * Day
+     */
+    day: string;
+    /**
+     * Count
+     */
+    count: number;
 };
 
 /**
@@ -626,6 +662,22 @@ export type TodaysPlanApiPlanTodayGetResponses = {
 };
 
 export type TodaysPlanApiPlanTodayGetResponse = TodaysPlanApiPlanTodayGetResponses[keyof TodaysPlanApiPlanTodayGetResponses];
+
+export type ActivityApiActivityGetData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/activity';
+};
+
+export type ActivityApiActivityGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: ActivityRead;
+};
+
+export type ActivityApiActivityGetResponse = ActivityApiActivityGetResponses[keyof ActivityApiActivityGetResponses];
 
 export type HealthApiHealthGetData = {
     body?: never;

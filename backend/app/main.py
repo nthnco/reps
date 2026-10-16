@@ -10,7 +10,7 @@ from starlette.types import Scope
 
 from app import auth, demo
 from app.db import get_db
-from app.routes import mastery, plan, problems
+from app.routes import activity, mastery, plan, problems
 
 THIRTY_DAYS = 30 * 24 * 60 * 60
 
@@ -65,6 +65,7 @@ login_required = [Depends(auth.require_login)]
 app.include_router(problems.router, dependencies=login_required)
 app.include_router(mastery.router, dependencies=login_required)
 app.include_router(plan.router, dependencies=login_required)
+app.include_router(activity.router, dependencies=login_required)
 
 
 @app.get("/api/health")

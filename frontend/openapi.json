@@ -304,6 +304,27 @@
         }
       }
     },
+    "/api/activity": {
+      "get": {
+        "tags": [
+          "activity"
+        ],
+        "summary": "Activity",
+        "operationId": "activity_api_activity_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActivityRead"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/health": {
       "get": {
         "summary": "Health",
@@ -323,6 +344,39 @@
   },
   "components": {
     "schemas": {
+      "ActivityRead": {
+        "properties": {
+          "today": {
+            "type": "string",
+            "format": "date",
+            "title": "Today"
+          },
+          "start": {
+            "type": "string",
+            "format": "date",
+            "title": "Start"
+          },
+          "days": {
+            "items": {
+              "$ref": "#/components/schemas/DayCountRead"
+            },
+            "type": "array",
+            "title": "Days"
+          },
+          "run": {
+            "type": "integer",
+            "title": "Run"
+          }
+        },
+        "type": "object",
+        "required": [
+          "today",
+          "start",
+          "days",
+          "run"
+        ],
+        "title": "ActivityRead"
+      },
       "AttemptCreate": {
         "properties": {
           "attempted_on": {
@@ -419,6 +473,25 @@
           "skill_after"
         ],
         "title": "AttemptCreated"
+      },
+      "DayCountRead": {
+        "properties": {
+          "day": {
+            "type": "string",
+            "format": "date",
+            "title": "Day"
+          },
+          "count": {
+            "type": "integer",
+            "title": "Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "day",
+          "count"
+        ],
+        "title": "DayCountRead"
       },
       "Difficulty": {
         "type": "string",

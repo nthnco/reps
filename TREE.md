@@ -160,7 +160,7 @@ Build next, in this order: 8, 9, 7, 10, 11. The rest wait.
       `next_review_on`, `skill_before`, `skill_after`. Learn: response
       schemas vs DB models, reading state before and after a write, why the
       due date is replayed, not stored.
-    - [ ] **Activity endpoint** (backend): `GET /api/activity` (per-day
+    - [x] **Activity endpoint** (backend): `GET /api/activity` (per-day
       counts for 26 weeks, `run`, `today`); run is a pure function with
       unit tests. Learn: SQL `GROUP BY` on dates, streak edge cases,
       timezones.
