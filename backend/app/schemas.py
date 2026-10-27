@@ -13,6 +13,7 @@ from pydantic import AfterValidator, BaseModel, ConfigDict, Field, StringConstra
 
 from app.clock import local_today
 from app.models import Difficulty, Pattern
+from app.status import Status
 from app.suggest import Reason
 
 
@@ -65,6 +66,10 @@ class ProblemRead(BaseModel):
     difficulty: Difficulty
     notes: str
     is_premium: bool
+
+
+class ProblemListItem(ProblemRead):
+    status: Status
 
 
 def _not_in_future(day: date) -> date:

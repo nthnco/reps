@@ -6,19 +6,36 @@ from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
+from app.clock import local_today
 from app.db import get_db
 from app.mastery import pattern_mastery
 from app.models import Attempt, Pattern, Problem
-from app.schemas import AttemptCreate, AttemptCreated, AttemptRead, ProblemCreate, ProblemRead
+from app.schemas import (
+    AttemptCreate,
+    AttemptCreated,
+    AttemptRead,
+    ProblemCreate,
+    ProblemListItem,
+    ProblemRead,
+)
 from app.sm2 import schedule
 from app.snapshot import ProblemSnapshot, load_problems
+from app.status import problem_status
 
 router = APIRouter(prefix="/api/problems", tags=["problems"])
 
 
-@router.get("", response_model=list[ProblemRead])
-def list_problems(db: Annotated[Session, Depends(get_db)]) -> list[Problem]:
-    return list(db.scalars(select(Problem).order_by(Problem.title)))
+@router.get("", response_model=list[ProblemListItem])
+def list_problems(db: Annotated[Session, Depends(get_db)]) -> list[ProblemListItem]:
+    today = local_today()
+    problems = sorted(load_problems(db), key=lambda p: p.title)
+    return [
+        ProblemListItem(
+            **ProblemRead.model_validate(p).model_dump(),
+            status=problem_status(p.attempts, today),  # pyright: ignore[reportArgumentType]
+        )
+        for p in problems
+    ]
 
 
 @router.post("", response_model=ProblemRead, status_code=status.HTTP_201_CREATED)

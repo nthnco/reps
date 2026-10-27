@@ -75,3 +75,18 @@ def test_invalid_problem_returns_422(client, overrides):
     response = client.post("/api/problems", json=VALID | overrides)
 
     assert response.status_code == 422
+
+
+def test_list_problems_includes_status(client):
+    solved_id = client.post("/api/problems", json=VALID).json()["id"]
+    failed_id = client.post(
+        "/api/problems", json=VALID | {"link": "https://leetcode.com/problems/3sum/"}
+    ).json()["id"]
+    attempt = {"solved": True, "duration_seconds": 600, "confidence": 4}
+    client.post(f"/api/problems/{solved_id}/attempts", json=attempt)
+    client.post(f"/api/problems/{failed_id}/attempts", json=attempt | {"solved": False})
+
+    statuses = {p["id"]: p["status"] for p in client.get("/api/problems").json()}
+
+    assert statuses[solved_id] == "learning"
+    assert statuses[failed_id] == "not_solved"

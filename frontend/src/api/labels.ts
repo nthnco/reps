@@ -1,4 +1,4 @@
-import type { Difficulty, Pattern } from './generated'
+import type { Difficulty, Pattern, Status } from './generated'
 
 // Typed as Record<Pattern, string> so the build fails if the backend adds a
 // pattern (after `npm run gen:api`) and it has no label here.
@@ -51,4 +51,12 @@ export const DIFFICULTY_LABELS: Record<Difficulty, string> = {
   easy: 'Easy',
   medium: 'Medium',
   hard: 'Hard',
+}
+
+export const STATUS_LABELS: Record<Status, string> = {
+  not_started: 'Not started',
+  not_solved: 'Not solved yet',
+  overdue: 'Overdue for review',
+  learning: 'Learning',
+  fresh: 'Fresh',
 }

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router'
-import type { Difficulty, Pattern, PatternMasteryRead, ProblemRead } from '../api/generated'
-import { PATTERN_LABELS, STAGES } from '../api/labels'
+import type { Difficulty, Pattern, PatternMasteryRead, ProblemListItem, Status } from '../api/generated'
+import { PATTERN_LABELS, STAGES, STATUS_LABELS } from '../api/labels'
 import { usePatternMastery, useProblems, useTodaysPlan } from '../api/queries'
 import { toPercent } from '../format'
 import { DifficultyBadge } from './DifficultyBadge'
@@ -11,7 +11,7 @@ import { PremiumBadge } from './PremiumBadge'
 const DIFFICULTY_ORDER: Record<Difficulty, number> = { easy: 0, medium: 1, hard: 2 }
 
 /** A pattern's problems, easiest first, then by title. */
-function problemsIn(problems: ProblemRead[], pattern: Pattern): ProblemRead[] {
+function problemsIn(problems: ProblemListItem[], pattern: Pattern): ProblemListItem[] {
   return problems
     .filter((p) => p.pattern === pattern)
     .sort(
@@ -162,7 +162,7 @@ function TierCounts({ row }: { row: PatternMasteryRead }) {
   )
 }
 
-function ProblemPanel({ pattern, problems }: { pattern: Pattern; problems: ProblemRead[] }) {
+function ProblemPanel({ pattern, problems }: { pattern: Pattern; problems: ProblemListItem[] }) {
   return (
     <div id={`panel-${pattern}`} className={cardClass}>
       <h4 className="border-b border-gray-100 p-3 font-medium dark:border-gray-800">
@@ -183,11 +183,34 @@ function ProblemPanel({ pattern, problems }: { pattern: Pattern; problems: Probl
               <span className="flex shrink-0 items-center gap-2">
                 {problem.is_premium && <PremiumBadge />}
                 <DifficultyBadge difficulty={problem.difficulty} />
+                <StatusDot status={problem.status} />
               </span>
             </li>
           ))}
         </ul>
       )}
     </div>
+  )
+}
+
+// A dot, not a colored badge, so it isn't read as difficulty (the badge beside
+// it uses the same green/amber/red).
+const DOT_CLASSES: Record<Status, string> = {
+  not_started: 'border-muted',
+  not_solved: 'border-not-solved',
+  overdue: 'border-not-solved bg-not-solved',
+  learning: 'border-accent bg-accent',
+  fresh: 'border-solved bg-solved',
+}
+
+function StatusDot({ status }: { status: Status }) {
+  const label = STATUS_LABELS[status]
+  return (
+    <span
+      role="img"
+      aria-label={label}
+      title={label}
+      className={`size-2.5 shrink-0 rounded-full border-2 ${DOT_CLASSES[status]}`}
+    />
   )
 }

@@ -179,6 +179,18 @@ Build next, in this order: 8, 9, 7, 10, 11. The rest wait.
       Learn: page state after a mutation, what a refresh loses, focus
       management when the screen changes.
 
+14. [x] **Problem status**: a dot at the end of each row in the pattern
+    panel, from `problem_status` (`app/status.py`, pure, replayed SM-2
+    state). Served as `status` on `GET /api/problems` only
+    (`ProblemListItem`), so the queue and plan shapes don't change.
+    - Not started: empty gray dot. Not solved yet (attempted, never solved;
+      always in the queue): empty dot with a red outline. Overdue (red): 3+ days past due, wins over
+      the rest. Fresh (green): 2+ passes in a row and the last attempt clean
+      with confidence 4-5. Learning (amber): anything else solved.
+    - A dot, not a badge, because the difficulty badge beside it uses the
+      same green/amber/red. Named via `aria-label` and `title`.
+    - Reads SM-2's `repetitions`; switching to FSRS means redefining fresh.
+
 ## Decided
 
 - **Dates**: attempts and review due dates are calendar dates, no time of

@@ -104,7 +104,7 @@
               "application/json": {
                 "schema": {
                   "items": {
-                    "$ref": "#/components/schemas/ProblemRead"
+                    "$ref": "#/components/schemas/ProblemListItem"
                   },
                   "type": "array",
                   "title": "Response List Problems Api Problems Get"
@@ -945,6 +945,51 @@
         ],
         "title": "ProblemCreate"
       },
+      "ProblemListItem": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "link": {
+            "type": "string",
+            "title": "Link"
+          },
+          "pattern": {
+            "$ref": "#/components/schemas/Pattern"
+          },
+          "difficulty": {
+            "$ref": "#/components/schemas/Difficulty"
+          },
+          "notes": {
+            "type": "string",
+            "title": "Notes"
+          },
+          "is_premium": {
+            "type": "boolean",
+            "title": "Is Premium"
+          },
+          "status": {
+            "$ref": "#/components/schemas/Status"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "title",
+          "link",
+          "pattern",
+          "difficulty",
+          "notes",
+          "is_premium",
+          "status"
+        ],
+        "title": "ProblemListItem"
+      },
       "ProblemRead": {
         "properties": {
           "id": {
@@ -1085,6 +1130,17 @@
           "deepen"
         ],
         "title": "Reason"
+      },
+      "Status": {
+        "type": "string",
+        "enum": [
+          "not_started",
+          "not_solved",
+          "overdue",
+          "learning",
+          "fresh"
+        ],
+        "title": "Status"
       },
       "SuggestionRead": {
         "properties": {
