@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event'
 import { beforeEach, expect, test, vi } from 'vitest'
 import { getActivity } from '../api/activity'
 import { createAttempt } from '../api/attempts'
-import type { ProblemRead } from '../api/generated'
+import type { ProblemListItem } from '../api/generated'
 import { listProblems } from '../api/problems'
 import { renderWithProviders } from '../test/render'
 import { STORAGE_KEY } from '../timer/useTimer'
@@ -15,7 +15,7 @@ vi.mock('../api/activity', () => ({ getActivity: vi.fn() }))
 const createAttemptMock = vi.mocked(createAttempt)
 const onLogged = vi.fn()
 
-const TWO_SUM: ProblemRead = {
+const TWO_SUM: ProblemListItem = {
   id: 7,
   title: 'Two Sum',
   link: 'https://leetcode.com/problems/two-sum/',
@@ -23,8 +23,9 @@ const TWO_SUM: ProblemRead = {
   difficulty: 'easy',
   notes: '',
   is_premium: false,
+  status: 'not_started',
 }
-const COIN_CHANGE: ProblemRead = {
+const COIN_CHANGE: ProblemListItem = {
   id: 9,
   title: 'Coin Change',
   link: 'https://leetcode.com/problems/coin-change/',
@@ -32,6 +33,7 @@ const COIN_CHANGE: ProblemRead = {
   difficulty: 'medium',
   notes: '',
   is_premium: false,
+  status: 'not_started',
 }
 
 beforeEach(() => {

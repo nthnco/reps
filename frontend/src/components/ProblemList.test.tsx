@@ -1,7 +1,7 @@
 import { screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, expect, test, vi } from 'vitest'
-import type { Pattern, PlanRead, ProblemRead } from '../api/generated'
+import type { Pattern, PlanRead, ProblemListItem } from '../api/generated'
 import { PATTERN_LABELS } from '../api/labels'
 import { getPatternMastery } from '../api/mastery'
 import { getTodaysPlan } from '../api/plan'
@@ -30,10 +30,11 @@ function planSuggesting(pattern: Pattern | null): PlanRead {
 function problem(
   id: number,
   title: string,
-  pattern: ProblemRead['pattern'],
-  difficulty: ProblemRead['difficulty'],
-): ProblemRead {
-  return { id, title, link: `https://leetcode.com/problems/${id}/`, pattern, difficulty, notes: '', is_premium: false }
+  pattern: ProblemListItem['pattern'],
+  difficulty: ProblemListItem['difficulty'],
+  status: ProblemListItem['status'] = 'not_started',
+): ProblemListItem {
+  return { id, title, link: `https://leetcode.com/problems/${id}/`, pattern, difficulty, notes: '', is_premium: false, status }
 }
 
 function masteryWithCovered(...covered: Pattern[]) {
@@ -113,7 +114,7 @@ test('a card opens its problems under its stage, easiest first, one pattern at a
   const user = userEvent.setup()
   listProblemsMock.mockResolvedValue([
     problem(1, 'Coin Change', 'dp_1d', 'medium'),
-    problem(3, 'Climbing Stairs', 'dp_1d', 'easy'),
+    problem(3, 'Climbing Stairs', 'dp_1d', 'easy', 'overdue'),
     problem(4, 'Two Sum', 'arrays_hashing', 'easy'),
   ])
   renderWithProviders(<ProblemList />)
@@ -126,6 +127,8 @@ test('a card opens its problems under its stage, easiest first, one pattern at a
   const items = within(dp).getAllByRole('listitem')
   expect(items.map((i) => i.textContent)).toEqual(['Climbing StairsEasy', 'Coin ChangeMedium'])
   expect(within(items[1]).getByRole('link')).toHaveAttribute('href', '/problems/1')
+  // The status is named, not only colored.
+  expect(within(items[0]).getByRole('img', { name: 'Overdue for review' })).toBeInTheDocument()
 
   await user.click(screen.getByRole('button', { name: /Arrays & Hashing/ }))
   expect(within(dp).queryByRole('list')).not.toBeInTheDocument()

@@ -5,15 +5,15 @@ import {
   UNREACHABLE_MESSAGE,
   type FieldErrorsFor,
 } from './errors'
-import type { AttemptRead, ProblemCreate, ProblemRead } from './generated'
+import type { AttemptRead, ProblemCreate, ProblemListItem, ProblemRead } from './generated'
 
 // Throws on failure: TanStack Query treats a thrown error as the query's error state.
-export async function listProblems(): Promise<ProblemRead[]> {
+export async function listProblems(): Promise<ProblemListItem[]> {
   const response = await apiFetch('/api/problems')
   if (!response.ok) {
     throw new Error(`Couldn't load problems (HTTP ${response.status}).`)
   }
-  return (await response.json()) as ProblemRead[]
+  return (await response.json()) as ProblemListItem[]
 }
 
 /** Newest first. */

@@ -347,6 +347,35 @@ export type ProblemCreate = {
 };
 
 /**
+ * ProblemListItem
+ */
+export type ProblemListItem = {
+    /**
+     * Id
+     */
+    id: number;
+    /**
+     * Title
+     */
+    title: string;
+    /**
+     * Link
+     */
+    link: string;
+    pattern: Pattern;
+    difficulty: Difficulty;
+    /**
+     * Notes
+     */
+    notes: string;
+    /**
+     * Is Premium
+     */
+    is_premium: boolean;
+    status: Status;
+};
+
+/**
  * ProblemRead
  */
 export type ProblemRead = {
@@ -432,6 +461,11 @@ export type RatingPartRead = {
  * Reason
  */
 export type Reason = 'start_easy' | 'next_medium' | 'step_back' | 'keep_reviewing' | 'deepen';
+
+/**
+ * Status
+ */
+export type Status = 'not_started' | 'not_solved' | 'overdue' | 'learning' | 'fresh';
 
 /**
  * SuggestionRead
@@ -574,7 +608,7 @@ export type ListProblemsApiProblemsGetResponses = {
      *
      * Successful Response
      */
-    200: Array<ProblemRead>;
+    200: Array<ProblemListItem>;
 };
 
 export type ListProblemsApiProblemsGetResponse = ListProblemsApiProblemsGetResponses[keyof ListProblemsApiProblemsGetResponses];
